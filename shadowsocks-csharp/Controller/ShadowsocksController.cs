@@ -425,7 +425,9 @@ namespace Shadowsocks.Controller
         {
             Encryption.RNG.Reload();
             // some logic in configuration updated the config when saving, we need to read it again
+            //读配置文件，初始化代理服务器列表等设置
             _config = Configuration.Load();
+            //统计配置，读取statistics-config.json文件
             StatisticsConfiguration = StatisticsStrategyConfiguration.Load();
 
             if (privoxyRunner == null)
