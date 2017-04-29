@@ -96,7 +96,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Controller\System\Hotkeys\HotkeyCallbacks.cs" />
     <Compile Include="Encryption\AEAD\AEADEncryptor.cs" />
     <Compile Include="Encryption\AEAD\AEADMbedTLSEncryptor.cs" />
     <Compile Include="Encryption\AEAD\AEADSodiumEncryptor.cs" />
@@ -110,7 +109,6 @@
     <Compile Include="Encryption\Stream\StreamEncryptor.cs" />
     <Compile Include="Encryption\Stream\StreamMbedTLSEncryptor.cs" />
     <Compile Include="Encryption\Stream\StreamSodiumEncryptor.cs" />
-    <Compile Include="Model\HotKeyConfig.cs" />
     <Compile Include="Model\ProxyConfig.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -120,24 +118,16 @@
     <Compile Include="Proxy\DirectConnect.cs" />
     <Compile Include="Proxy\HttpProxy.cs" />
     <Compile Include="Proxy\IProxy.cs" />
-    <Compile Include="Controller\Service\AvailabilityStatistics.cs" />
     <Compile Include="Controller\Strategy\HighAvailabilityStrategy.cs" />
-    <Compile Include="Controller\Strategy\StatisticsStrategy.cs" />
-    <Compile Include="Controller\System\AutoStartup.cs" />
     <Compile Include="Controller\FileManager.cs" />
-    <Compile Include="Controller\Service\GFWListUpdater.cs" />
     <Compile Include="Controller\I18N.cs" />
     <Compile Include="Controller\Service\Listener.cs" />
     <Compile Include="Controller\Logging.cs" />
     <Compile Include="Controller\Service\PortForwarder.cs" />
     <Compile Include="Controller\Service\UDPRelay.cs" />
     <Compile Include="Controller\Service\UpdateChecker.cs" />
-    <Compile Include="Controller\Service\PACServer.cs" />
-    <Compile Include="Model\LogViewerConfig.cs" />
     <Compile Include="Model\Server.cs" />
     <Compile Include="Model\Configuration.cs" />
-    <Compile Include="Model\StatisticsRecord.cs" />
-    <Compile Include="Model\StatisticsStrategyConfiguration.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -149,7 +139,6 @@
     <Compile Include="Proxy\Socks5Proxy.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="StringEx.cs" />
-    <Compile Include="Controller\System\Hotkeys\Hotkeys.cs" />
     <Compile Include="Util\ProcessManagement\Job.cs" />
     <Compile Include="Util\ProcessManagement\ThreadUtil.cs" />
     <Compile Include="Util\Sockets\LineReader.cs" />
@@ -170,24 +159,11 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Controller\ShadowsocksController.cs" />
-    <Compile Include="Controller\System\SystemProxy.cs" />
     <Compile Include="View\CalculationControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="View\CalculationControl.Designer.cs">
       <DependentUpon>CalculationControl.cs</DependentUpon>
-    </Compile>
-    <Compile Include="View\HotkeySettingsForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="View\HotkeySettingsForm.designer.cs">
-      <DependentUpon>HotkeySettingsForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="View\LogForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="View\LogForm.Designer.cs">
-      <DependentUpon>LogForm.cs</DependentUpon>
     </Compile>
     <Compile Include="View\MenuViewController.cs" />
     <Compile Include="View\ProxyForm.cs">
@@ -195,21 +171,6 @@
     </Compile>
     <Compile Include="View\ProxyForm.Designer.cs">
       <DependentUpon>ProxyForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="View\QRCodeForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="View\QRCodeForm.Designer.cs">
-      <DependentUpon>QRCodeForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="View\QRCodeSplashForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="View\StatisticsStrategyConfigurationForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="View\StatisticsStrategyConfigurationForm.Designer.cs">
-      <DependentUpon>StatisticsStrategyConfigurationForm.cs</DependentUpon>
     </Compile>
     <EmbeddedResource Include="View\ConfigForm.resx">
       <DependentUpon>ConfigForm.cs</DependentUpon>
@@ -223,20 +184,8 @@
     <EmbeddedResource Include="View\CalculationControl.resx">
       <DependentUpon>CalculationControl.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="View\HotkeySettingsForm.resx">
-      <DependentUpon>HotkeySettingsForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="View\LogForm.resx">
-      <DependentUpon>LogForm.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="View\ProxyForm.resx">
       <DependentUpon>ProxyForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="View\QRCodeForm.resx">
-      <DependentUpon>QRCodeForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="View\StatisticsStrategyConfigurationForm.resx">
-      <DependentUpon>StatisticsStrategyConfigurationForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="app.config" />
     <None Include="app.manifest">
