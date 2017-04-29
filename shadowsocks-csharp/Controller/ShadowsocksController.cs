@@ -21,7 +21,6 @@ namespace Shadowsocks.Controller
         // interacts with low level logic
 
         private Thread _ramThread;
-        private Thread _trafficThread;
 
         private Listener _listener;
         private Configuration _config;
@@ -35,8 +34,7 @@ namespace Shadowsocks.Controller
         public Queue<TrafficPerSecond> trafficPerSecondQueue;
 
         private bool stopped = false;
-
-        private bool _systemProxyIsDirty = false;
+        
 
         public class PathEventArgs : EventArgs
         {
@@ -56,7 +54,6 @@ namespace Shadowsocks.Controller
         public event EventHandler EnableGlobalChanged;
         public event EventHandler ShareOverLANStatusChanged;
         public event EventHandler VerboseLoggingStatusChanged;
-        public event EventHandler TrafficChanged;
         
 
         public event ErrorEventHandler Errored;
@@ -210,7 +207,7 @@ namespace Shadowsocks.Controller
             }
             if (_config.enabled)
             {
-                SystemProxy.Update(_config, true, null);
+                SystemProxy.Update(_config, true);
             }
             Encryption.RNG.Close();
         }

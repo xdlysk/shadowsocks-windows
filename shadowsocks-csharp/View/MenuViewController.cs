@@ -5,10 +5,6 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
 
-using ZXing;
-using ZXing.Common;
-using ZXing.QrCode;
-
 using Shadowsocks.Controller;
 using Shadowsocks.Model;
 using Shadowsocks.Properties;
@@ -35,28 +31,17 @@ namespace Shadowsocks.View
         private bool _isStartupChecking;
         private MenuItem enableItem;
         private MenuItem modeItem;
-        private MenuItem AutoStartupItem;
         private MenuItem ShareOverLANItem;
         private MenuItem SeperatorItem;
         private MenuItem ConfigItem;
         private MenuItem ServersItem;
         private MenuItem globalModeItem;
         private MenuItem PACModeItem;
-        private MenuItem localPACItem;
-        private MenuItem onlinePACItem;
-        private MenuItem editLocalPACItem;
-        private MenuItem updateFromGFWListItem;
-        private MenuItem editGFWUserRuleItem;
-        private MenuItem editOnlinePACItem;
-        private MenuItem secureLocalPacUrlToggleItem;
-        private MenuItem autoCheckUpdatesToggleItem;
         private MenuItem checkPreReleaseToggleItem;
         private MenuItem proxyItem;
-        private MenuItem hotKeyItem;
         private MenuItem VerboseLoggingToggleItem;
         private ConfigForm configForm;
         private ProxyForm proxyForm;
-        private string _urlToOpen;
 
         public MenuViewController(ShadowsocksController controller)
         {
@@ -78,7 +63,6 @@ namespace Shadowsocks.View
             _notifyIcon.BalloonTipClicked += notifyIcon1_BalloonTipClicked;
             _notifyIcon.MouseDoubleClick += notifyIcon1_DoubleClick;
             _notifyIcon.BalloonTipClosed += _notifyIcon_BalloonTipClosed;
-            controller.TrafficChanged += controller_TrafficChanged;
 
             this.updateChecker = new UpdateChecker();
             updateChecker.CheckUpdateCompleted += updateChecker_CheckUpdateCompleted;
@@ -544,7 +528,6 @@ namespace Shadowsocks.View
         private void UpdateUpdateMenu()
         {
             Configuration configuration = controller.GetConfigurationCopy();
-            autoCheckUpdatesToggleItem.Checked = configuration.autoCheckUpdate;
             checkPreReleaseToggleItem.Checked = configuration.checkPreRelease;
         }
 
