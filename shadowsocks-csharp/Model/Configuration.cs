@@ -63,7 +63,7 @@ namespace Shadowsocks.Model
                     config.localPort = 1080;
                 if (config.index == -1 && config.strategy == null)
                     config.index = 0;
-
+                config.proxy = new ProxyConfig();
                 config.proxy.CheckConfig();
 
                 return config;

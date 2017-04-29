@@ -157,12 +157,6 @@
       <DependentUpon>CalculationControl.cs</DependentUpon>
     </Compile>
     <Compile Include="View\MenuViewController.cs" />
-    <Compile Include="View\ProxyForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="View\ProxyForm.Designer.cs">
-      <DependentUpon>ProxyForm.cs</DependentUpon>
-    </Compile>
     <EmbeddedResource Include="View\ConfigForm.resx">
       <DependentUpon>ConfigForm.cs</DependentUpon>
       <SubType>Designer</SubType>
@@ -174,9 +168,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="View\CalculationControl.resx">
       <DependentUpon>CalculationControl.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="View\ProxyForm.resx">
-      <DependentUpon>ProxyForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="app.config" />
     <None Include="app.manifest">

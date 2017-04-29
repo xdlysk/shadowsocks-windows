@@ -38,10 +38,7 @@ namespace Shadowsocks.View
         private MenuItem globalModeItem;
         private MenuItem PACModeItem;
         private MenuItem checkPreReleaseToggleItem;
-        private MenuItem proxyItem;
-        private MenuItem VerboseLoggingToggleItem;
         private ConfigForm configForm;
-        private ProxyForm proxyForm;
 
         public MenuViewController(ShadowsocksController controller)
         {
@@ -52,7 +49,6 @@ namespace Shadowsocks.View
             controller.EnableStatusChanged += controller_EnableStatusChanged;
             controller.ConfigChanged += controller_ConfigChanged;
             controller.ShareOverLANStatusChanged += controller_ShareOverLANStatusChanged;
-            controller.VerboseLoggingStatusChanged += controller_VerboseLoggingStatusChanged;
             controller.EnableGlobalChanged += controller_EnableGlobalChanged;
             controller.Errored += controller_Errored;
 
@@ -245,12 +241,10 @@ namespace Shadowsocks.View
                     this.ConfigItem = CreateMenuItem("Edit Servers...", new EventHandler(this.Config_Click))
                 }),
                
-                this.proxyItem = CreateMenuItem("Forward Proxy...", new EventHandler(this.proxyItem_Click)),
                 new MenuItem("-"),
                 this.ShareOverLANItem = CreateMenuItem("Allow Clients from LAN", new EventHandler(this.ShareOverLANItem_Click)),
                 new MenuItem("-"),
                 CreateMenuGroup("Help", new MenuItem[] {
-                    this.VerboseLoggingToggleItem = CreateMenuItem( "Verbose Logging", new EventHandler(this.VerboseLoggingToggleItem_Click) ),
                     CreateMenuGroup("Updates...", new MenuItem[] {
                         CreateMenuItem("Check for Updates...", new EventHandler(this.checkUpdatesItem_Click)),
                         new MenuItem("-"),
@@ -280,10 +274,6 @@ namespace Shadowsocks.View
         void controller_ShareOverLANStatusChanged(object sender, EventArgs e)
         {
             ShareOverLANItem.Checked = controller.GetConfigurationCopy().shareOverLan;
-        }
-
-        void controller_VerboseLoggingStatusChanged(object sender, EventArgs e) {
-            VerboseLoggingToggleItem.Checked = controller.GetConfigurationCopy().isVerboseLogging;
         }
 
         void controller_EnableGlobalChanged(object sender, EventArgs e)
@@ -350,7 +340,6 @@ namespace Shadowsocks.View
             globalModeItem.Checked = config.global;
             PACModeItem.Checked = !config.global;
             ShareOverLANItem.Checked = config.shareOverLan;
-            VerboseLoggingToggleItem.Checked = config.isVerboseLogging;
             UpdateUpdateMenu();
         }
 
@@ -409,21 +398,6 @@ namespace Shadowsocks.View
             }
         }
 
-        private void ShowProxyForm()
-        {
-            if (proxyForm != null)
-            {
-                proxyForm.Activate();
-            }
-            else
-            {
-                proxyForm = new ProxyForm(controller);
-                proxyForm.Show();
-                proxyForm.Activate();
-                proxyForm.FormClosed += proxyForm_FormClosed;
-            }
-        }
-
         void configForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             configForm.Dispose();
@@ -435,13 +409,6 @@ namespace Shadowsocks.View
                 ShowFirstTimeBalloon();
                 _isFirstRun = false;
             }
-        }
-
-        void proxyForm_FormClosed(object sender, FormClosedEventArgs e)
-        {
-            proxyForm.Dispose();
-            proxyForm = null;
-            Utils.ReleaseMemory(true);
         }
 
         private void Config_Click(object sender, EventArgs e)
@@ -519,12 +486,6 @@ namespace Shadowsocks.View
             controller.SelectStrategy((string)item.Tag);
         }
 
-        private void VerboseLoggingToggleItem_Click( object sender, EventArgs e ) {
-            VerboseLoggingToggleItem.Checked = ! VerboseLoggingToggleItem.Checked;
-            controller.ToggleVerboseLogging( VerboseLoggingToggleItem.Checked );
-        }
-
-
         private void UpdateUpdateMenu()
         {
             Configuration configuration = controller.GetConfigurationCopy();
@@ -542,11 +503,6 @@ namespace Shadowsocks.View
         private void checkUpdatesItem_Click(object sender, EventArgs e)
         {
             updateChecker.CheckUpdate(controller.GetConfigurationCopy());
-        }
-
-        private void proxyItem_Click(object sender, EventArgs e)
-        {
-            ShowProxyForm();
         }
 
     }
