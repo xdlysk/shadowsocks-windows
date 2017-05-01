@@ -10,12 +10,12 @@ namespace Shadowsocks.Model
 
         public const int MaxProxyTimeoutSec = 10;
         private const int DefaultProxyTimeoutSec = 3;
+        public int proxyPort;
+        public string proxyServer;
+        public int proxyTimeout;
+        public int proxyType;
 
         public bool useProxy;
-        public int proxyType;
-        public string proxyServer;
-        public int proxyPort;
-        public int proxyTimeout;
 
         public ProxyConfig()
         {
@@ -28,10 +28,8 @@ namespace Shadowsocks.Model
 
         public void CheckConfig()
         {
-            if (proxyType < PROXY_SOCKS5 || proxyType > PROXY_HTTP)
-            {
+            if ((proxyType < PROXY_SOCKS5) || (proxyType > PROXY_HTTP))
                 proxyType = PROXY_SOCKS5;
-            }
         }
     }
 }

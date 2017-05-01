@@ -8,30 +8,7 @@ namespace Shadowsocks.Proxy
 {
     public class DirectConnect : IProxy
     {
-        private class FakeAsyncResult : IAsyncResult
-        {
-            public FakeAsyncResult(object state)
-            {
-                AsyncState = state;
-            }
-
-            public bool IsCompleted { get; } = true;
-            public WaitHandle AsyncWaitHandle { get; } = null;
-            public object AsyncState { get; }
-            public bool CompletedSynchronously { get; } = true;
-        }
-
-        private class FakeEndPoint : EndPoint
-        {
-            public override AddressFamily AddressFamily { get; } = AddressFamily.Unspecified;
-
-            public override string ToString()
-            {
-                return "null proxy";
-            }
-        }
-
-        private WrappedSocket _remote = new WrappedSocket();
+        private readonly WrappedSocket _remote = new WrappedSocket();
 
         public EndPoint LocalEndPoint => _remote.LocalEndPoint;
 
@@ -94,6 +71,29 @@ namespace Shadowsocks.Proxy
         public void Close()
         {
             _remote.Dispose();
+        }
+
+        private class FakeAsyncResult : IAsyncResult
+        {
+            public FakeAsyncResult(object state)
+            {
+                AsyncState = state;
+            }
+
+            public bool IsCompleted { get; } = true;
+            public WaitHandle AsyncWaitHandle { get; } = null;
+            public object AsyncState { get; }
+            public bool CompletedSynchronously { get; } = true;
+        }
+
+        private class FakeEndPoint : EndPoint
+        {
+            public override AddressFamily AddressFamily { get; } = AddressFamily.Unspecified;
+
+            public override string ToString()
+            {
+                return "null proxy";
+            }
         }
     }
 }

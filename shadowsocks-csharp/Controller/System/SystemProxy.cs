@@ -2,7 +2,7 @@
 using Shadowsocks.Model;
 using Shadowsocks.Util.SystemProxy;
 
-namespace Shadowsocks.Controller
+namespace Shadowsocks.Controller.System
 {
     public static class SystemProxy
     {
@@ -13,24 +13,18 @@ namespace Shadowsocks.Controller
 
         public static void Update(Configuration config, bool forceDisable)
         {
-            bool global = config.global;
-            bool enabled = config.enabled;
+            var global = config.global;
+            var enabled = config.enabled;
 
             if (forceDisable)
-            {
                 enabled = false;
-            }
 
             try
             {
                 if (enabled)
-                {
-                    Sysproxy.SetIEProxy(true, true, "127.0.0.1:" + config.localPort.ToString(), null);
-                }
+                    Sysproxy.SetIEProxy(true, true, "127.0.0.1:" + config.localPort, null);
                 else
-                {
                     Sysproxy.SetIEProxy(false, false, null, null);
-                }
             }
             catch (ProxyException ex)
             {

@@ -2,14 +2,24 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using Shadowsocks.Properties;
 
 namespace Shadowsocks.Controller
 {
-    using Shadowsocks.Properties;
-
     public static class I18N
     {
-        private static Dictionary<string, string> _strings = new Dictionary<string, string>();
+        private static readonly Dictionary<string, string> _strings = new Dictionary<string, string>();
+
+        static I18N()
+        {
+            var name = CultureInfo.CurrentCulture.EnglishName;
+            if (name.StartsWith("Chinese", StringComparison.OrdinalIgnoreCase))
+                Init(name.Contains("Traditional")
+                    ? Resources.zh_TW
+                    : Resources.zh_CN);
+            else if (name.StartsWith("Japan", StringComparison.OrdinalIgnoreCase))
+                Init(Resources.ja);
+        }
 
         private static void Init(string res)
         {
@@ -25,22 +35,6 @@ namespace Shadowsocks.Controller
                         continue;
                     _strings[line.Substring(0, pos)] = line.Substring(pos + 1);
                 }
-            }
-        }
-
-        static I18N()
-        {
-            string name = CultureInfo.CurrentCulture.EnglishName;
-            if (name.StartsWith("Chinese", StringComparison.OrdinalIgnoreCase))
-            {
-                // choose Traditional Chinese only if we get explicit indication
-                Init(name.Contains("Traditional")
-                    ? Resources.zh_TW
-                    : Resources.zh_CN);
-            }
-            else if (name.StartsWith("Japan", StringComparison.OrdinalIgnoreCase))
-            {
-                Init(Resources.ja);
             }
         }
 

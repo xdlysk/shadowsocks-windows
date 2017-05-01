@@ -11,8 +11,14 @@ namespace Shadowsocks.Encryption.AEAD
     {
         private const int CIPHER_CHACHA20IETFPOLY1305 = 1;
 
-        private byte[] _sodiumEncSubkey;
-        private byte[] _sodiumDecSubkey;
+        private static readonly Dictionary<string, EncryptorInfo> _ciphers = new Dictionary<string, EncryptorInfo>
+        {
+            {"chacha20-ietf-poly1305", new EncryptorInfo(32, 32, 12, 16, CIPHER_CHACHA20IETFPOLY1305)}
+        };
+
+        private readonly byte[] _sodiumDecSubkey;
+
+        private readonly byte[] _sodiumEncSubkey;
 
         public AEADSodiumEncryptor(string method, string password)
             : base(method, password)
@@ -21,10 +27,9 @@ namespace Shadowsocks.Encryption.AEAD
             _sodiumDecSubkey = new byte[keyLen];
         }
 
-        private static Dictionary<string, EncryptorInfo> _ciphers = new Dictionary<string, EncryptorInfo>
+        public override void Dispose()
         {
-            {"chacha20-ietf-poly1305", new EncryptorInfo(32, 32, 12, 16, CIPHER_CHACHA20IETFPOLY1305)},
-        };
+        }
 
         public static List<string> SupportedCiphers()
         {
@@ -58,7 +63,7 @@ namespace Shadowsocks.Encryption.AEAD
             {
                 case CIPHER_CHACHA20IETFPOLY1305:
                     ret = Sodium.crypto_aead_chacha20poly1305_ietf_encrypt(ciphertext, ref encClen,
-                        plaintext, (ulong) plen,
+                        plaintext, plen,
                         null, 0,
                         null, _encNonce,
                         _sodiumEncSubkey);
@@ -87,7 +92,7 @@ namespace Shadowsocks.Encryption.AEAD
                 case CIPHER_CHACHA20IETFPOLY1305:
                     ret = Sodium.crypto_aead_chacha20poly1305_ietf_decrypt(plaintext, ref decPlen,
                         null,
-                        ciphertext, (ulong) clen,
+                        ciphertext, clen,
                         null, 0,
                         _decNonce, _sodiumDecSubkey);
                     break;
@@ -99,10 +104,6 @@ namespace Shadowsocks.Encryption.AEAD
             Logging.Dump("after cipherDecrypt: plain", plaintext, (int) decPlen);
             plen = (uint) decPlen;
             return ret;
-        }
-
-        public override void Dispose()
-        {
         }
     }
 }

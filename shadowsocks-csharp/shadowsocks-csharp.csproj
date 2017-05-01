@@ -116,7 +116,6 @@
     <Compile Include="Controller\Logging.cs" />
     <Compile Include="Controller\Service\PortForwarder.cs" />
     <Compile Include="Controller\Service\UDPRelay.cs" />
-    <Compile Include="Controller\Service\UpdateChecker.cs" />
     <Compile Include="Model\Server.cs" />
     <Compile Include="Model\Configuration.cs" />
     <Compile Include="Properties\Resources.Designer.cs">

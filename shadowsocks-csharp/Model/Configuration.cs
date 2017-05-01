@@ -1,42 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-
-using Shadowsocks.Controller;
 using Newtonsoft.Json;
+using Shadowsocks.Controller;
 
 namespace Shadowsocks.Model
 {
     [Serializable]
     public class Configuration
     {
+        private static readonly string CONFIG_FILE = "gui-config.json";
+        public bool availabilityStatistics;
+        public bool checkPreRelease;
         public List<Server> configs;
+        public bool enabled;
+        public bool global;
+        public int index;
+        public bool isDefault;
+        public bool isVerboseLogging;
+        public int localPort;
+        public string pacUrl;
+        public ProxyConfig proxy;
+        public bool secureLocalPac = true;
+        public bool shareOverLan;
 
         // when strategy is set, index is ignored
         public string strategy;
-        public int index;
-        public bool global;
-        public bool enabled;
-        public bool shareOverLan;
-        public bool isDefault;
-        public int localPort;
-        public string pacUrl;
         public bool useOnlinePac;
-        public bool secureLocalPac = true;
-        public bool availabilityStatistics;
-        public bool autoCheckUpdate;
-        public bool checkPreRelease;
-        public bool isVerboseLogging;
-        public ProxyConfig proxy;
-
-        private static string CONFIG_FILE = "gui-config.json";
 
         public Server GetCurrentServer()
         {
-            if (index >= 0 && index < configs.Count)
+            if ((index >= 0) && (index < configs.Count))
                 return configs[index];
-            else
-                return GetDefaultServer();
+            return GetDefaultServer();
         }
 
         public static void CheckServer(Server server)
@@ -51,8 +47,8 @@ namespace Shadowsocks.Model
         {
             try
             {
-                string configContent = File.ReadAllText(CONFIG_FILE);
-                Configuration config = JsonConvert.DeserializeObject<Configuration>(configContent);
+                var configContent = File.ReadAllText(CONFIG_FILE);
+                var config = JsonConvert.DeserializeObject<Configuration>(configContent);
                 config.isDefault = false;
 
                 if (config.configs == null)
@@ -61,7 +57,7 @@ namespace Shadowsocks.Model
                     config.configs.Add(GetDefaultServer());
                 if (config.localPort == 0)
                     config.localPort = 1080;
-                if (config.index == -1 && config.strategy == null)
+                if ((config.index == -1) && (config.strategy == null))
                     config.index = 0;
                 config.proxy = new ProxyConfig();
                 config.proxy.CheckConfig();
@@ -77,8 +73,7 @@ namespace Shadowsocks.Model
                     index = 0,
                     isDefault = true,
                     localPort = 1080,
-                    autoCheckUpdate = true,
-                    configs = new List<Server>()
+                    configs = new List<Server>
                     {
                         GetDefaultServer()
                     }
@@ -92,14 +87,14 @@ namespace Shadowsocks.Model
                 config.index = config.configs.Count - 1;
             if (config.index < -1)
                 config.index = -1;
-            if (config.index == -1 && config.strategy == null)
+            if ((config.index == -1) && (config.strategy == null))
                 config.index = 0;
             config.isDefault = false;
             try
             {
-                using (StreamWriter sw = new StreamWriter(File.Open(CONFIG_FILE, FileMode.Create)))
+                using (var sw = new StreamWriter(File.Open(CONFIG_FILE, FileMode.Create)))
                 {
-                    string jsonString = JsonConvert.SerializeObject(config, Formatting.Indented);
+                    var jsonString = JsonConvert.SerializeObject(config, Formatting.Indented);
                     sw.Write(jsonString);
                     sw.Flush();
                 }
@@ -123,7 +118,7 @@ namespace Shadowsocks.Model
 
         public static void CheckPort(int port)
         {
-            if (port <= 0 || port > 65535)
+            if ((port <= 0) || (port > 65535))
                 throw new ArgumentException(I18N.GetString("Port out of range"));
         }
 
@@ -148,7 +143,7 @@ namespace Shadowsocks.Model
 
         public static void CheckTimeout(int timeout, int maxTimeout)
         {
-            if (timeout <= 0 || timeout > maxTimeout)
+            if ((timeout <= 0) || (timeout > maxTimeout))
                 throw new ArgumentException(string.Format(
                     I18N.GetString("Timeout is invalid, it should not exceed {0}"), maxTimeout));
         }

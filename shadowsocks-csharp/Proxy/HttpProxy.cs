@@ -11,42 +11,27 @@ namespace Shadowsocks.Proxy
 {
     public class HttpProxy : IProxy
     {
-        private class FakeAsyncResult : IAsyncResult
-        {
-            public readonly HttpState innerState;
+        private const string HTTP_CRLF = "\r\n";
 
-            private readonly IAsyncResult r;
+        private const string HTTP_CONNECT_TEMPLATE =
+            "CONNECT {0} HTTP/1.1" + HTTP_CRLF +
+            "Host: {0}" + HTTP_CRLF +
+            "Proxy-Connection: keep-alive" + HTTP_CRLF +
+            "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36" +
+            HTTP_CRLF +
+            "" + HTTP_CRLF; // End with an empty line
 
-            public FakeAsyncResult(IAsyncResult orig, HttpState state)
-            {
-                r = orig;
-                innerState = state;
-            }
+        private static readonly Regex HttpRespondHeaderRegex = new Regex(@"^(HTTP/1\.\d) (\d{3}) (.+)$",
+            RegexOptions.Compiled);
 
-            public bool IsCompleted => r.IsCompleted;
-            public WaitHandle AsyncWaitHandle => r.AsyncWaitHandle;
-            public object AsyncState => innerState.AsyncState;
-            public bool CompletedSynchronously => r.CompletedSynchronously;
-        }
 
-        private class HttpState
-        {
-
-            public AsyncCallback Callback { get; set; }
-
-            public object AsyncState { get; set; }
-
-            public int BytesToRead;
-
-            public Exception ex { get; set; }
-        }
+        private readonly WrappedSocket _remote = new WrappedSocket();
+        private bool _established;
+        private int _respondLineCount;
 
         public EndPoint LocalEndPoint => _remote.LocalEndPoint;
         public EndPoint ProxyEndPoint { get; private set; }
         public EndPoint DestEndPoint { get; private set; }
-
-
-        private readonly WrappedSocket _remote = new WrappedSocket();
 
 
         public void BeginConnectProxy(EndPoint remoteEP, AsyncCallback callback, object state)
@@ -62,18 +47,10 @@ namespace Shadowsocks.Proxy
             _remote.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, true);
         }
 
-        private const string HTTP_CRLF = "\r\n";
-        private const string HTTP_CONNECT_TEMPLATE = 
-            "CONNECT {0} HTTP/1.1" + HTTP_CRLF + 
-            "Host: {0}" + HTTP_CRLF +
-            "Proxy-Connection: keep-alive" + HTTP_CRLF +
-            "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36" + HTTP_CRLF +
-            "" + HTTP_CRLF; // End with an empty line
-
         public void BeginConnectDest(EndPoint destEndPoint, AsyncCallback callback, object state)
         {
             DestEndPoint = destEndPoint;
-            string request = string.Format(HTTP_CONNECT_TEMPLATE, destEndPoint);
+            var request = string.Format(HTTP_CONNECT_TEMPLATE, destEndPoint);
 
             var b = Encoding.UTF8.GetBytes(request);
 
@@ -86,12 +63,10 @@ namespace Shadowsocks.Proxy
 
         public void EndConnectDest(IAsyncResult asyncResult)
         {
-            var state = ((FakeAsyncResult)asyncResult).innerState;
+            var state = ((FakeAsyncResult) asyncResult).innerState;
 
             if (state.ex != null)
-            {
                 throw state.ex;
-            }
         }
 
         public void BeginSend(byte[] buffer, int offset, int size, SocketFlags socketFlags, AsyncCallback callback,
@@ -134,7 +109,8 @@ namespace Shadowsocks.Proxy
                 _remote.EndSend(ar);
 
                 // start line read
-                new LineReader(_remote, OnLineRead, OnException, OnFinish, Encoding.UTF8, HTTP_CRLF, 1024, new FakeAsyncResult(ar, state));
+                new LineReader(_remote, OnLineRead, OnException, OnFinish, Encoding.UTF8, HTTP_CRLF, 1024,
+                    new FakeAsyncResult(ar, state));
             }
             catch (Exception ex)
             {
@@ -145,16 +121,11 @@ namespace Shadowsocks.Proxy
 
         private void OnFinish(byte[] lastBytes, int index, int length, object state)
         {
-            var st = (FakeAsyncResult)state;
+            var st = (FakeAsyncResult) state;
 
             if (st.innerState.ex == null)
-            {
                 if (!_established)
-                {
                     st.innerState.ex = new Exception(I18N.GetString("Proxy request failed"));
-                }
-                // TODO: save last bytes
-            }
             st.innerState.Callback?.Invoke(st);
         }
 
@@ -164,10 +135,6 @@ namespace Shadowsocks.Proxy
 
             st.innerState.ex = ex;
         }
-
-        private static readonly Regex HttpRespondHeaderRegex = new Regex(@"^(HTTP/1\.\d) (\d{3}) (.+)$", RegexOptions.Compiled);
-        private int _respondLineCount = 0;
-        private bool _established = false;
 
         private bool OnLineRead(string line, object state)
         {
@@ -180,22 +147,47 @@ namespace Shadowsocks.Proxy
                 {
                     var resultCode = m.Groups[2].Value;
                     if ("200" != resultCode)
-                    {
                         return true;
-                    }
                     _established = true;
                 }
             }
             else
             {
                 if (line.IsNullOrEmpty())
-                {
                     return true;
-                }
             }
             _respondLineCount++;
 
             return false;
+        }
+
+        private class FakeAsyncResult : IAsyncResult
+        {
+            public readonly HttpState innerState;
+
+            private readonly IAsyncResult r;
+
+            public FakeAsyncResult(IAsyncResult orig, HttpState state)
+            {
+                r = orig;
+                innerState = state;
+            }
+
+            public bool IsCompleted => r.IsCompleted;
+            public WaitHandle AsyncWaitHandle => r.AsyncWaitHandle;
+            public object AsyncState => innerState.AsyncState;
+            public bool CompletedSynchronously => r.CompletedSynchronously;
+        }
+
+        private class HttpState
+        {
+            public int BytesToRead;
+
+            public AsyncCallback Callback { get; set; }
+
+            public object AsyncState { get; set; }
+
+            public Exception ex { get; set; }
         }
     }
 }

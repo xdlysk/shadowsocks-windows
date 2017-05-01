@@ -10,39 +10,10 @@ namespace Shadowsocks.Proxy
 {
     public class Socks5Proxy : IProxy
     {
-        private class FakeAsyncResult : IAsyncResult
-        {
-            public readonly Socks5State InnerState;
-
-            private readonly IAsyncResult r;
-
-            public FakeAsyncResult(IAsyncResult orig, Socks5State state)
-            {
-                r = orig;
-                InnerState = state;
-            }
-
-            public bool IsCompleted => r.IsCompleted;
-            public WaitHandle AsyncWaitHandle => r.AsyncWaitHandle;
-            public object AsyncState => InnerState.AsyncState;
-            public bool CompletedSynchronously => r.CompletedSynchronously;
-        }
-
-        private class Socks5State
-        {
-            public AsyncCallback Callback { get; set; }
-
-            public object AsyncState { get; set; }
-
-            public int BytesToRead;
-
-            public Exception Ex { get; set; }
-        }
-
-        private readonly WrappedSocket _remote = new WrappedSocket();
-
         private const int Socks5PktMaxSize = 4 + 16 + 2;
         private readonly byte[] _receiveBuffer = new byte[Socks5PktMaxSize];
+
+        private readonly WrappedSocket _remote = new WrappedSocket();
 
         public EndPoint LocalEndPoint => _remote.LocalEndPoint;
         public EndPoint ProxyEndPoint { get; private set; }
@@ -63,12 +34,10 @@ namespace Shadowsocks.Proxy
 
         public void EndConnectProxy(IAsyncResult asyncResult)
         {
-            var state = ((FakeAsyncResult)asyncResult).InnerState;
+            var state = ((FakeAsyncResult) asyncResult).InnerState;
 
             if (state.Ex != null)
-            {
                 throw state.Ex;
-            }
         }
 
         public void BeginConnectDest(EndPoint destEndPoint, AsyncCallback callback, object state)
@@ -88,8 +57,8 @@ namespace Shadowsocks.Proxy
                 var enc = Encoding.UTF8;
                 var hostByteCount = enc.GetByteCount(dep.Host);
 
-                request = new byte[4 + 1/*length byte*/ + hostByteCount + 2];
-                request[4] = (byte)hostByteCount;
+                request = new byte[4 + 1 /*length byte*/+ hostByteCount + 2];
+                request[4] = (byte) hostByteCount;
                 enc.GetBytes(dep.Host, 0, dep.Host.Length, request, 5);
 
                 port = dep.Port;
@@ -110,7 +79,7 @@ namespace Shadowsocks.Proxy
                         throw new Exception(I18N.GetString("Proxy request failed"));
                 }
                 port = ((IPEndPoint) DestEndPoint).Port;
-                var addr = ((IPEndPoint)DestEndPoint).Address.GetAddressBytes();
+                var addr = ((IPEndPoint) DestEndPoint).Address.GetAddressBytes();
                 Array.Copy(addr, 0, request, 4, request.Length - 4 - 2);
             }
 
@@ -131,12 +100,10 @@ namespace Shadowsocks.Proxy
 
         public void EndConnectDest(IAsyncResult asyncResult)
         {
-            var state = ((FakeAsyncResult)asyncResult).InnerState;
+            var state = ((FakeAsyncResult) asyncResult).InnerState;
 
             if (state.Ex != null)
-            {
                 throw state.Ex;
-            }
         }
 
         public void BeginSend(byte[] buffer, int offset, int size, SocketFlags socketFlags, AsyncCallback callback,
@@ -170,7 +137,7 @@ namespace Shadowsocks.Proxy
         {
             _remote.Dispose();
         }
-        
+
 
         private void ConnectCallback(IAsyncResult ar)
         {
@@ -193,7 +160,7 @@ namespace Shadowsocks.Proxy
 
         private void Socks5HandshakeSendCallback(IAsyncResult ar)
         {
-            var state = (Socks5State)ar.AsyncState;
+            var state = (Socks5State) ar.AsyncState;
             try
             {
                 _remote.EndSend(ar);
@@ -210,16 +177,14 @@ namespace Shadowsocks.Proxy
         private void Socks5HandshakeReceiveCallback(IAsyncResult ar)
         {
             Exception ex = null;
-            var state = (Socks5State)ar.AsyncState;
+            var state = (Socks5State) ar.AsyncState;
             try
             {
                 var bytesRead = _remote.EndReceive(ar);
                 if (bytesRead >= 2)
                 {
-                    if (_receiveBuffer[0] != 5 || _receiveBuffer[1] != 0)
-                    {
+                    if ((_receiveBuffer[0] != 5) || (_receiveBuffer[1] != 0))
                         ex = new Exception(I18N.GetString("Proxy handshake failed"));
-                    }
                 }
                 else
                 {
@@ -237,7 +202,7 @@ namespace Shadowsocks.Proxy
 
         private void Socks5RequestSendCallback(IAsyncResult ar)
         {
-            var state = (Socks5State)ar.AsyncState;
+            var state = (Socks5State) ar.AsyncState;
             try
             {
                 _remote.EndSend(ar);
@@ -253,13 +218,13 @@ namespace Shadowsocks.Proxy
 
         private void Socks5ReplyReceiveCallback(IAsyncResult ar)
         {
-            var state = (Socks5State)ar.AsyncState;
+            var state = (Socks5State) ar.AsyncState;
             try
             {
                 var bytesRead = _remote.EndReceive(ar);
                 if (bytesRead >= 4)
                 {
-                    if (_receiveBuffer[0] == 5 && _receiveBuffer[1] == 0)
+                    if ((_receiveBuffer[0] == 5) && (_receiveBuffer[1] == 0))
                     {
                         // 跳过剩下的reply
                         switch (_receiveBuffer[3]) // atyp
@@ -301,16 +266,14 @@ namespace Shadowsocks.Proxy
         private void Socks5ReplyReceiveCallback2(IAsyncResult ar)
         {
             Exception ex = null;
-            var state = (Socks5State)ar.AsyncState;
+            var state = (Socks5State) ar.AsyncState;
             try
             {
                 var bytesRead = _remote.EndReceive(ar);
                 var bytesNeedSkip = state.BytesToRead;
 
                 if (bytesRead < bytesNeedSkip)
-                {
                     ex = new Exception(I18N.GetString("Proxy request failed"));
-                }
             }
             catch (Exception ex2)
             {
@@ -319,6 +282,34 @@ namespace Shadowsocks.Proxy
 
             state.Ex = ex;
             state.Callback?.Invoke(new FakeAsyncResult(ar, state));
+        }
+
+        private class FakeAsyncResult : IAsyncResult
+        {
+            public readonly Socks5State InnerState;
+
+            private readonly IAsyncResult r;
+
+            public FakeAsyncResult(IAsyncResult orig, Socks5State state)
+            {
+                r = orig;
+                InnerState = state;
+            }
+
+            public bool IsCompleted => r.IsCompleted;
+            public WaitHandle AsyncWaitHandle => r.AsyncWaitHandle;
+            public object AsyncState => InnerState.AsyncState;
+            public bool CompletedSynchronously => r.CompletedSynchronously;
+        }
+
+        private class Socks5State
+        {
+            public int BytesToRead;
+            public AsyncCallback Callback { get; set; }
+
+            public object AsyncState { get; set; }
+
+            public Exception Ex { get; set; }
         }
     }
 }

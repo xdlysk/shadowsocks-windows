@@ -9,22 +9,23 @@ namespace Shadowsocks.Encryption.AEAD
     public class AEADMbedTLSEncryptor
         : AEADEncryptor, IDisposable
     {
-        const int CIPHER_AES = 1;
+        private const int CIPHER_AES = 1;
+
+        private static readonly Dictionary<string, EncryptorInfo> _ciphers = new Dictionary<string, EncryptorInfo>
+        {
+            {"aes-128-gcm", new EncryptorInfo("AES-128-GCM", 16, 16, 12, 16, CIPHER_AES)},
+            {"aes-192-gcm", new EncryptorInfo("AES-192-GCM", 24, 24, 12, 16, CIPHER_AES)},
+            {"aes-256-gcm", new EncryptorInfo("AES-256-GCM", 32, 32, 12, 16, CIPHER_AES)}
+        };
+
+        private IntPtr _decryptCtx = IntPtr.Zero;
 
         private IntPtr _encryptCtx = IntPtr.Zero;
-        private IntPtr _decryptCtx = IntPtr.Zero;
 
         public AEADMbedTLSEncryptor(string method, string password)
             : base(method, password)
         {
         }
-
-        private static Dictionary<string, EncryptorInfo> _ciphers = new Dictionary<string, EncryptorInfo>
-        {
-            {"aes-128-gcm", new EncryptorInfo("AES-128-GCM", 16, 16, 12, 16, CIPHER_AES)},
-            {"aes-192-gcm", new EncryptorInfo("AES-192-GCM", 24, 24, 12, 16, CIPHER_AES)},
-            {"aes-256-gcm", new EncryptorInfo("AES-256-GCM", 32, 32, 12, 16, CIPHER_AES)},
-        };
 
         public static List<string> SupportedCiphers()
         {
@@ -39,15 +40,11 @@ namespace Shadowsocks.Encryption.AEAD
         public override void InitCipher(byte[] salt, bool isEncrypt, bool isUdp)
         {
             base.InitCipher(salt, isEncrypt, isUdp);
-            IntPtr ctx = Marshal.AllocHGlobal(MbedTLS.cipher_get_size_ex());
+            var ctx = Marshal.AllocHGlobal(MbedTLS.cipher_get_size_ex());
             if (isEncrypt)
-            {
                 _encryptCtx = ctx;
-            }
             else
-            {
                 _decryptCtx = ctx;
-            }
             MbedTLS.cipher_init(ctx);
             if (MbedTLS.cipher_setup(ctx, MbedTLS.cipher_info_from_string(_innerLibName)) != 0)
                 throw new System.Exception("Cannot initialize mbed TLS cipher context");
@@ -59,8 +56,8 @@ namespace Shadowsocks.Encryption.AEAD
 
         private void CipherSetKey(bool isEncrypt, byte[] key)
         {
-            IntPtr ctx = isEncrypt ? _encryptCtx : _decryptCtx;
-            int ret = MbedTLS.cipher_setkey(ctx, key, keyLen * 8,
+            var ctx = isEncrypt ? _encryptCtx : _decryptCtx;
+            var ret = MbedTLS.cipher_setkey(ctx, key, keyLen*8,
                 isEncrypt ? MbedTLS.MBEDTLS_ENCRYPT : MbedTLS.MBEDTLS_DECRYPT);
             if (ret != 0) throw new System.Exception("failed to set key");
             ret = MbedTLS.cipher_reset(ctx);
@@ -72,7 +69,7 @@ namespace Shadowsocks.Encryption.AEAD
             // buf: all plaintext
             // outbuf: ciphertext + tag
             int ret;
-            byte[] tagbuf = new byte[tagLen];
+            var tagbuf = new byte[tagLen];
             uint olen = 0;
             switch (_cipher)
             {
@@ -105,7 +102,7 @@ namespace Shadowsocks.Encryption.AEAD
             int ret;
             uint olen = 0;
             // split tag
-            byte[] tagbuf = new byte[tagLen];
+            var tagbuf = new byte[tagLen];
             Array.Copy(ciphertext, (int) (clen - tagLen), tagbuf, 0, tagLen);
             switch (_cipher)
             {

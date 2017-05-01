@@ -5,7 +5,7 @@ namespace Shadowsocks.Encryption
 {
     public static class RNG
     {
-        private static RNGCryptoServiceProvider _rng = null;
+        private static RNGCryptoServiceProvider _rng;
 
         public static void Init()
         {
@@ -41,7 +41,7 @@ namespace Shadowsocks.Encryption
             catch (System.Exception)
             {
                 // the backup way
-                byte[] tmp = new byte[len];
+                var tmp = new byte[len];
                 _rng.GetBytes(tmp);
                 Buffer.BlockCopy(tmp, 0, buf, 0, len);
             }

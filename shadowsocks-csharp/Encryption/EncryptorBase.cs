@@ -2,13 +2,13 @@
 {
     public class EncryptorInfo
     {
-        public int KeySize;
+        public string InnerLibName;
         public int IvSize;
+        public int KeySize;
+        public int NonceSize;
         public int SaltSize;
         public int TagSize;
-        public int NonceSize;
         public int Type;
-        public string InnerLibName;
 
         // For those who make use of internal crypto method name
         // e.g. mbed TLS
@@ -17,18 +17,18 @@
 
         public EncryptorInfo(string innerLibName, int keySize, int ivSize, int type)
         {
-            this.KeySize = keySize;
-            this.IvSize = ivSize;
-            this.Type = type;
-            this.InnerLibName = innerLibName;
+            KeySize = keySize;
+            IvSize = ivSize;
+            Type = type;
+            InnerLibName = innerLibName;
         }
 
         public EncryptorInfo(int keySize, int ivSize, int type)
         {
-            this.KeySize = keySize;
-            this.IvSize = ivSize;
-            this.Type = type;
-            this.InnerLibName = string.Empty;
+            KeySize = keySize;
+            IvSize = ivSize;
+            Type = type;
+            InnerLibName = string.Empty;
         }
 
         #endregion
@@ -37,22 +37,22 @@
 
         public EncryptorInfo(string innerLibName, int keySize, int saltSize, int nonceSize, int tagSize, int type)
         {
-            this.KeySize = keySize;
-            this.SaltSize = saltSize;
-            this.NonceSize = nonceSize;
-            this.TagSize = tagSize;
-            this.Type = type;
-            this.InnerLibName = innerLibName;
+            KeySize = keySize;
+            SaltSize = saltSize;
+            NonceSize = nonceSize;
+            TagSize = tagSize;
+            Type = type;
+            InnerLibName = innerLibName;
         }
 
         public EncryptorInfo(int keySize, int saltSize, int nonceSize, int tagSize, int type)
         {
-            this.KeySize = keySize;
-            this.SaltSize = saltSize;
-            this.NonceSize = nonceSize;
-            this.TagSize = tagSize;
-            this.Type = type;
-            this.InnerLibName = string.Empty;
+            KeySize = keySize;
+            SaltSize = saltSize;
+            NonceSize = nonceSize;
+            TagSize = tagSize;
+            Type = type;
+            InnerLibName = string.Empty;
         }
 
         #endregion
@@ -73,14 +73,14 @@
 
         public const int MD5_LEN = 16;
 
+        protected string Method;
+        protected string Password;
+
         protected EncryptorBase(string method, string password)
         {
             Method = method;
             Password = password;
         }
-
-        protected string Method;
-        protected string Password;
 
         public abstract void Encrypt(byte[] buf, int length, byte[] outbuf, out int outlength);
 
@@ -92,6 +92,6 @@
 
         public abstract void Dispose();
 
-        public int AddrBufLength { get; set; } = - 1;
+        public int AddrBufLength { get; set; } = -1;
     }
 }

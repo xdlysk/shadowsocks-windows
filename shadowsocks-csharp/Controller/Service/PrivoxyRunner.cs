@@ -11,21 +11,21 @@ using Shadowsocks.Properties;
 using Shadowsocks.Util;
 using Shadowsocks.Util.ProcessManagement;
 
-namespace Shadowsocks.Controller
+namespace Shadowsocks.Controller.Service
 {
-    class PrivoxyRunner
+    internal class PrivoxyRunner
     {
-        private static int _uid;
-        private static string _uniqueConfigFile;
-        private static Job _privoxyJob;
+        private static readonly int _uid;
+        private static readonly string _uniqueConfigFile;
+        private static readonly Job _privoxyJob;
         private Process _process;
-        private int _runningPort;
 
         static PrivoxyRunner()
         {
             try
             {
-                _uid = Application.StartupPath.GetHashCode(); // Currently we use ss's StartupPath to identify different Privoxy instance.
+                _uid = Application.StartupPath.GetHashCode();
+                    // Currently we use ss's StartupPath to identify different Privoxy instance.
                 _uniqueConfigFile = $"privoxy_{_uid}.conf";
                 _privoxyJob = new Job();
 
@@ -38,22 +38,21 @@ namespace Shadowsocks.Controller
             }
         }
 
-        public int RunningPort => _runningPort;
+        public int RunningPort { get; private set; }
 
         public void Start(Configuration configuration)
         {
             if (_process == null)
             {
-                Process[] existingPrivoxy = Process.GetProcessesByName("ss_privoxy");
-                foreach (Process p in existingPrivoxy.Where(IsChildProcess))
-                {
+                var existingPrivoxy = Process.GetProcessesByName("ss_privoxy");
+                foreach (var p in existingPrivoxy.Where(IsChildProcess))
                     KillProcess(p);
-                }
-                string privoxyConfig = Resources.privoxy_conf;
-                _runningPort = GetFreePort();
+                var privoxyConfig = Resources.privoxy_conf;
+                RunningPort = GetFreePort();
                 privoxyConfig = privoxyConfig.Replace("__SOCKS_PORT__", configuration.localPort.ToString());
-                privoxyConfig = privoxyConfig.Replace("__PRIVOXY_BIND_PORT__", _runningPort.ToString());
-                privoxyConfig = privoxyConfig.Replace("__PRIVOXY_BIND_IP__", configuration.shareOverLan ? "0.0.0.0" : "127.0.0.1");
+                privoxyConfig = privoxyConfig.Replace("__PRIVOXY_BIND_PORT__", RunningPort.ToString());
+                privoxyConfig = privoxyConfig.Replace("__PRIVOXY_BIND_IP__",
+                    configuration.shareOverLan ? "0.0.0.0" : "127.0.0.1");
                 FileManager.ByteArrayToFile(Utils.GetTempPath(_uniqueConfigFile), Encoding.UTF8.GetBytes(privoxyConfig));
 
                 _process = new Process
@@ -127,7 +126,6 @@ namespace Shadowsocks.Controller
                 var path = process.MainModule.FileName;
 
                 return Utils.GetTempPath("ss_privoxy.exe").Equals(path);
-
             }
             catch (Exception ex)
             {
@@ -143,13 +141,13 @@ namespace Shadowsocks.Controller
 
         private int GetFreePort()
         {
-            int defaultPort = 8123;
+            var defaultPort = 8123;
             try
             {
                 // TCP stack please do me a favor
-                TcpListener l = new TcpListener(IPAddress.Loopback, 0);
+                var l = new TcpListener(IPAddress.Loopback, 0);
                 l.Start();
-                var port = ((IPEndPoint)l.LocalEndpoint).Port;
+                var port = ((IPEndPoint) l.LocalEndpoint).Port;
                 l.Stop();
                 return port;
             }

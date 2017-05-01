@@ -2,31 +2,33 @@
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using System.Timers;
 using System.Windows.Forms;
 using Microsoft.Win32;
-
 using Shadowsocks.Controller;
 using Shadowsocks.Util;
 using Shadowsocks.View;
+using Timer = System.Timers.Timer;
 
 namespace Shadowsocks
 {
-    static class Program
+    internal static class Program
     {
+        private static int exited;
         public static ShadowsocksController MainController { get; private set; }
         public static MenuViewController MenuController { get; private set; }
 
         /// <summary>
-        /// 应用程序的主入口点。
+        ///     应用程序的主入口点。
         /// </summary>
         [STAThread]
-        static void Main()
+        private static void Main()
         {
             // Check OS since we are using dual-mode socket
             if (!Utils.IsWinVistaOrHigher())
             {
                 MessageBox.Show(I18N.GetString("Unsupported operating system, use Windows Vista at least."),
-                "Shadowsocks Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    "Shadowsocks Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
@@ -34,7 +36,7 @@ namespace Shadowsocks
             if (!Utils.IsSupportedRuntimeVersion())
             {
                 MessageBox.Show(I18N.GetString("Unsupported .NET Framework, please update to 4.6.2 or later."),
-                "Shadowsocks Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    "Shadowsocks Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
                 Process.Start(
                     "http://dotnetsocial.cloudapp.net/GetDotnet?tfm=.NETFramework,Version=v4.6.2");
@@ -42,7 +44,7 @@ namespace Shadowsocks
             }
 
             Utils.ReleaseMemory(true);
-            using (Mutex mutex = new Mutex(false, $"Global\\Shadowsocks_{Application.StartupPath.GetHashCode()}"))
+            using (var mutex = new Mutex(false, $"Global\\Shadowsocks_{Application.StartupPath.GetHashCode()}"))
             {
                 Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
                 // handle UI exceptions
@@ -56,14 +58,16 @@ namespace Shadowsocks
 
                 if (!mutex.WaitOne(0, false))
                 {
-                    Process[] oldProcesses = Process.GetProcessesByName("Shadowsocks");
+                    var oldProcesses = Process.GetProcessesByName("Shadowsocks");
                     if (oldProcesses.Length > 0)
                     {
-                        Process oldProcess = oldProcesses[0];
+                        var oldProcess = oldProcesses[0];
                     }
                     MessageBox.Show(I18N.GetString("Find Shadowsocks icon in your notify tray.")
-                        + Environment.NewLine
-                        + I18N.GetString("If you want to start multiple Shadowsocks, make a copy in another directory."),
+                                    + Environment.NewLine
+                                    +
+                                    I18N.GetString(
+                                        "If you want to start multiple Shadowsocks, make a copy in another directory."),
                         I18N.GetString("Shadowsocks is already running."));
                     return;
                 }
@@ -72,9 +76,11 @@ namespace Shadowsocks
                 Logging.OpenLogFile();
 
                 // truncate privoxy log file while debugging
-                string privoxyLogFilename = Utils.GetTempPath("privoxy.log");
+                var privoxyLogFilename = Utils.GetTempPath("privoxy.log");
                 if (File.Exists(privoxyLogFilename))
-                    using (new FileStream(privoxyLogFilename, FileMode.Truncate)) { }
+                    using (new FileStream(privoxyLogFilename, FileMode.Truncate))
+                    {
+                    }
 #else
                 Logging.OpenLogFile();
 #endif
@@ -85,12 +91,11 @@ namespace Shadowsocks
             }
         }
 
-        private static int exited = 0;
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             if (Interlocked.Increment(ref exited) == 1)
             {
-                string errMsg = e.ExceptionObject.ToString();
+                var errMsg = e.ExceptionObject.ToString();
                 Logging.Error(errMsg);
                 MessageBox.Show(
                     $"{I18N.GetString("Unexpected error, shadowsocks will exit. Please report to")} https://github.com/shadowsocks/shadowsocks-windows/issues {Environment.NewLine}{errMsg}",
@@ -120,7 +125,7 @@ namespace Shadowsocks
                     Logging.Info("os wake up");
                     if (MainController != null)
                     {
-                        System.Timers.Timer timer = new System.Timers.Timer(10 * 1000);
+                        var timer = new Timer(10*1000);
                         timer.Elapsed += Timer_Elapsed;
                         timer.AutoReset = false;
                         timer.Enabled = true;
@@ -138,7 +143,7 @@ namespace Shadowsocks
             }
         }
 
-        private static void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        private static void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
             try
             {
@@ -156,7 +161,7 @@ namespace Shadowsocks
             {
                 try
                 {
-                    System.Timers.Timer timer = (System.Timers.Timer)sender;
+                    var timer = (Timer) sender;
                     timer.Enabled = false;
                     timer.Stop();
                     timer.Dispose();

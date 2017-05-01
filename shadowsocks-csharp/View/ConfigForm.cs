@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
-using System.Diagnostics;
-using Microsoft.Win32;
 using Shadowsocks.Controller;
 using Shadowsocks.Model;
 using Shadowsocks.Properties;
@@ -14,23 +9,23 @@ namespace Shadowsocks.View
 {
     public partial class ConfigForm : Form
     {
-        private ShadowsocksController controller;
+        private int _lastSelectedIndex = -1;
 
         // this is a copy of configuration that we are working on
         private Configuration _modifiedConfiguration;
-        private int _lastSelectedIndex = -1;
+        private readonly ShadowsocksController controller;
 
         public ConfigForm(ShadowsocksController controller)
         {
-            this.Font = System.Drawing.SystemFonts.MessageBoxFont;
+            Font = SystemFonts.MessageBoxFont;
             InitializeComponent();
 
             // a dirty hack
-            this.ServersListBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PerformLayout();
+            ServersListBox.Dock = DockStyle.Fill;
+            PerformLayout();
 
             UpdateTexts();
-            this.Icon = Icon.FromHandle(Resources.ssw128.GetHicon());
+            Icon = Icon.FromHandle(Resources.ssw128.GetHicon());
 
             this.controller = controller;
             controller.ConfigChanged += controller_ConfigChanged;
@@ -55,7 +50,7 @@ namespace Shadowsocks.View
             MyCancelButton.Text = I18N.GetString("Cancel");
             MoveUpButton.Text = I18N.GetString("Move &Up");
             MoveDownButton.Text = I18N.GetString("Move D&own");
-            this.Text = I18N.GetString("Edit Servers");
+            Text = I18N.GetString("Edit Servers");
         }
 
         private void controller_ConfigChanged(object sender, EventArgs e)
@@ -65,8 +60,8 @@ namespace Shadowsocks.View
 
         private void ShowWindow()
         {
-            this.Opacity = 1;
-            this.Show();
+            Opacity = 1;
+            Show();
             IPTextBox.Focus();
         }
 
@@ -74,11 +69,9 @@ namespace Shadowsocks.View
         {
             try
             {
-                if (_lastSelectedIndex == -1 || _lastSelectedIndex >= _modifiedConfiguration.configs.Count)
-                {
+                if ((_lastSelectedIndex == -1) || (_lastSelectedIndex >= _modifiedConfiguration.configs.Count))
                     return true;
-                }
-                Server server = new Server();
+                var server = new Server();
 
                 if (Uri.CheckHostName(server.server = IPTextBox.Text.Trim()) == UriHostNameType.Unknown)
                 {
@@ -101,7 +94,7 @@ namespace Shadowsocks.View
                     TimeoutTextBox.Focus();
                     return false;
                 }
-                int localPort = int.Parse(ProxyPortTextBox.Text);
+                var localPort = int.Parse(ProxyPortTextBox.Text);
                 Configuration.CheckServer(server);
                 Configuration.CheckLocalPort(localPort);
                 _modifiedConfiguration.configs[_lastSelectedIndex] = server;
@@ -118,9 +111,10 @@ namespace Shadowsocks.View
 
         private void LoadSelectedServer()
         {
-            if (ServersListBox.SelectedIndex >= 0 && ServersListBox.SelectedIndex < _modifiedConfiguration.configs.Count)
+            if ((ServersListBox.SelectedIndex >= 0) &&
+                (ServersListBox.SelectedIndex < _modifiedConfiguration.configs.Count))
             {
-                Server server = _modifiedConfiguration.configs[ServersListBox.SelectedIndex];
+                var server = _modifiedConfiguration.configs[ServersListBox.SelectedIndex];
 
                 IPTextBox.Text = server.server;
                 ServerPortTextBox.Text = server.server_port.ToString();
@@ -135,10 +129,8 @@ namespace Shadowsocks.View
         private void LoadConfiguration(Configuration configuration)
         {
             ServersListBox.Items.Clear();
-            foreach (Server server in _modifiedConfiguration.configs)
-            {
+            foreach (var server in _modifiedConfiguration.configs)
                 ServersListBox.Items.Add(server.FriendlyName());
-            }
         }
 
         private void LoadCurrentConfiguration()
@@ -146,10 +138,8 @@ namespace Shadowsocks.View
             _modifiedConfiguration = controller.GetConfigurationCopy();
             LoadConfiguration(_modifiedConfiguration);
             _lastSelectedIndex = _modifiedConfiguration.index;
-            if (_lastSelectedIndex < 0 || _lastSelectedIndex >= ServersListBox.Items.Count)
-            {
+            if ((_lastSelectedIndex < 0) || (_lastSelectedIndex >= ServersListBox.Items.Count))
                 _lastSelectedIndex = 0;
-            }
             ServersListBox.SelectedIndex = _lastSelectedIndex;
             UpdateMoveUpAndDownButton();
             LoadSelectedServer();
@@ -157,7 +147,6 @@ namespace Shadowsocks.View
 
         private void ConfigForm_Load(object sender, EventArgs e)
         {
-
         }
 
         private void ConfigForm_KeyDown(object sender, KeyEventArgs e)
@@ -166,11 +155,9 @@ namespace Shadowsocks.View
 
             if (e.KeyCode == Keys.Enter)
             {
-                Server server = controller.GetCurrentServer();
+                var server = controller.GetCurrentServer();
                 if (!SaveOldSelectedServer())
-                {
                     return;
-                }
                 if (_modifiedConfiguration.configs.Count == 0)
                 {
                     MessageBox.Show(I18N.GetString("Please add at least one server"));
@@ -179,20 +166,14 @@ namespace Shadowsocks.View
                 controller.SaveServers(_modifiedConfiguration.configs, _modifiedConfiguration.localPort);
                 controller.SelectServerIndex(_modifiedConfiguration.configs.IndexOf(server));
             }
-
         }
 
         private void ServersListBox_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (!ServersListBox.CanSelect)
-            {
                 return;
-            }
             if (_lastSelectedIndex == ServersListBox.SelectedIndex)
-            {
-                // we are moving back to oldSelectedIndex or doing a force move
                 return;
-            }
             if (!SaveOldSelectedServer())
             {
                 // why this won't cause stack overflow?
@@ -200,9 +181,8 @@ namespace Shadowsocks.View
                 return;
             }
             if (_lastSelectedIndex >= 0)
-            {
-                ServersListBox.Items[_lastSelectedIndex] = _modifiedConfiguration.configs[_lastSelectedIndex].FriendlyName();
-            }
+                ServersListBox.Items[_lastSelectedIndex] =
+                    _modifiedConfiguration.configs[_lastSelectedIndex].FriendlyName();
             UpdateMoveUpAndDownButton();
             LoadSelectedServer();
             _lastSelectedIndex = ServersListBox.SelectedIndex;
@@ -211,24 +191,20 @@ namespace Shadowsocks.View
         private void AddButton_Click(object sender, EventArgs e)
         {
             if (!SaveOldSelectedServer())
-            {
                 return;
-            }
-            Server server = Configuration.GetDefaultServer();
+            var server = Configuration.GetDefaultServer();
             _modifiedConfiguration.configs.Add(server);
             LoadConfiguration(_modifiedConfiguration);
             ServersListBox.SelectedIndex = _modifiedConfiguration.configs.Count - 1;
             _lastSelectedIndex = ServersListBox.SelectedIndex;
         }
 
-        private void DuplicateButton_Click( object sender, EventArgs e )
+        private void DuplicateButton_Click(object sender, EventArgs e)
         {
             if (!SaveOldSelectedServer())
-            {
                 return;
-            }
-            Server currServer = _modifiedConfiguration.configs[_lastSelectedIndex];
-            var currIndex = _modifiedConfiguration.configs.IndexOf( currServer );
+            var currServer = _modifiedConfiguration.configs[_lastSelectedIndex];
+            var currIndex = _modifiedConfiguration.configs.IndexOf(currServer);
             _modifiedConfiguration.configs.Insert(currIndex + 1, currServer);
             LoadConfiguration(_modifiedConfiguration);
             ServersListBox.SelectedIndex = currIndex + 1;
@@ -238,15 +214,10 @@ namespace Shadowsocks.View
         private void DeleteButton_Click(object sender, EventArgs e)
         {
             _lastSelectedIndex = ServersListBox.SelectedIndex;
-            if (_lastSelectedIndex >= 0 && _lastSelectedIndex < _modifiedConfiguration.configs.Count)
-            {
+            if ((_lastSelectedIndex >= 0) && (_lastSelectedIndex < _modifiedConfiguration.configs.Count))
                 _modifiedConfiguration.configs.RemoveAt(_lastSelectedIndex);
-            }
             if (_lastSelectedIndex >= _modifiedConfiguration.configs.Count)
-            {
-                // can be -1
                 _lastSelectedIndex = _modifiedConfiguration.configs.Count - 1;
-            }
             ServersListBox.SelectedIndex = _lastSelectedIndex;
             LoadConfiguration(_modifiedConfiguration);
             ServersListBox.SelectedIndex = _lastSelectedIndex;
@@ -256,9 +227,7 @@ namespace Shadowsocks.View
         private void OKButton_Click(object sender, EventArgs e)
         {
             if (!SaveOldSelectedServer())
-            {
                 return;
-            }
             if (_modifiedConfiguration.configs.Count == 0)
             {
                 MessageBox.Show(I18N.GetString("Please add at least one server"));
@@ -269,12 +238,12 @@ namespace Shadowsocks.View
             // We handled this in event handlers, e.g. Add/DeleteButton, SelectedIndexChanged
             // and move operations
             controller.SelectServerIndex(ServersListBox.SelectedIndex);
-            this.Close();
+            Close();
         }
 
         private void CancelButton_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Close();
         }
 
         private void ConfigForm_Shown(object sender, EventArgs e)
@@ -289,9 +258,9 @@ namespace Shadowsocks.View
 
         private void MoveConfigItem(int step)
         {
-            int index = ServersListBox.SelectedIndex;
-            Server server = _modifiedConfiguration.configs[index];
-            object item = ServersListBox.Items[index];
+            var index = ServersListBox.SelectedIndex;
+            var server = _modifiedConfiguration.configs[index];
+            var item = ServersListBox.Items[index];
 
             _modifiedConfiguration.configs.Remove(server);
             _modifiedConfiguration.configs.Insert(index + step, server);
@@ -312,45 +281,29 @@ namespace Shadowsocks.View
         private void UpdateMoveUpAndDownButton()
         {
             if (ServersListBox.SelectedIndex == 0)
-            {
                 MoveUpButton.Enabled = false;
-            }
             else
-            {
                 MoveUpButton.Enabled = true;
-            }
             if (ServersListBox.SelectedIndex == ServersListBox.Items.Count - 1)
-            {
                 MoveDownButton.Enabled = false;
-            }
             else
-            {
                 MoveDownButton.Enabled = true;
-            }
         }
 
         private void MoveUpButton_Click(object sender, EventArgs e)
         {
             if (!SaveOldSelectedServer())
-            {
                 return;
-            }
             if (ServersListBox.SelectedIndex > 0)
-            {
-                MoveConfigItem(-1);  // -1 means move backward
-            }
+                MoveConfigItem(-1); // -1 means move backward
         }
 
         private void MoveDownButton_Click(object sender, EventArgs e)
         {
             if (!SaveOldSelectedServer())
-            {
                 return;
-            }
             if (ServersListBox.SelectedIndex < ServersListBox.Items.Count - 1)
-            {
-                MoveConfigItem(+1);  // +1 means move forward
-            }
+                MoveConfigItem(+1); // +1 means move forward
         }
     }
 }

@@ -9,7 +9,7 @@ namespace Shadowsocks.Util.SystemProxy
 {
     public static class Sysproxy
     {
-        private static bool _userSettingsRecorded = false;
+        private static bool _userSettingsRecorded;
 
         // In general, this won't change
         // format:
@@ -18,16 +18,6 @@ namespace Shadowsocks.Util.SystemProxy
         //  <bypass-list><CR-LF>
         //  <pac-url>
         private static string[] _userSettings = new string[4];
-
-        enum RET_ERRORS : int
-        {
-            RET_NO_ERROR = 0,
-            INVALID_FORMAT = 1,
-            NO_PERMISSION = 2,
-            SYSCALL_FAILED = 3,
-            NO_MEMORY = 4,
-            INVAILD_OPTION_COUNT = 5,
-        };
 
         static Sysproxy()
         {
@@ -102,29 +92,31 @@ namespace Shadowsocks.Util.SystemProxy
                 process.WaitForExit();
 
                 var exitCode = process.ExitCode;
-                if (exitCode != (int)RET_ERRORS.RET_NO_ERROR)
-                {
+                if (exitCode != (int) RET_ERRORS.RET_NO_ERROR)
                     throw new ProxyException(stderr);
-                }
 
-                if (arguments == "query" && stdout.IsNullOrWhiteSpace())
-                {
-                    // we cannot get user settings
+                if ((arguments == "query") && stdout.IsNullOrWhiteSpace())
                     throw new ProxyException("failed to query wininet settings");
-                }
                 queryStr = stdout;
             }
         }
 
         private static void ParseQueryStr(string str)
         {
-            _userSettings = str.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            _userSettings = str.Split(new[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries);
             for (var i = 0; i < 4; i++)
-            {
-                // handle output from WinINET
                 if (_userSettings[i] == "(null)")
                     _userSettings[i] = null;
-            }
+        }
+
+        private enum RET_ERRORS
+        {
+            RET_NO_ERROR = 0,
+            INVALID_FORMAT = 1,
+            NO_PERMISSION = 2,
+            SYSCALL_FAILED = 3,
+            NO_MEMORY = 4,
+            INVAILD_OPTION_COUNT = 5
         }
     }
 }

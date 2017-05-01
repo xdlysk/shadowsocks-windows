@@ -11,12 +11,12 @@ namespace Shadowsocks.Encryption
     {
         private const string DLLNAME = "libsscrypto.dll";
 
-        private static bool _initialized = false;
+        private static readonly bool _initialized;
         private static readonly object _initLock = new object();
 
         static Sodium()
         {
-            string dllPath = Utils.GetTempPath(DLLNAME);
+            var dllPath = Utils.GetTempPath(DLLNAME);
             try
             {
                 FileManager.UncompressFile(dllPath, Resources.libsscrypto_dll);
@@ -33,16 +33,10 @@ namespace Shadowsocks.Encryption
             lock (_initLock)
             {
                 if (!_initialized)
-                {
                     if (sodium_init() == -1)
-                    {
                         throw new System.Exception("Failed to initialize sodium");
-                    }
                     else /* 1 means already initialized; 0 means success */
-                    {
                         _initialized = true;
-                    }
-                }
             }
         }
 

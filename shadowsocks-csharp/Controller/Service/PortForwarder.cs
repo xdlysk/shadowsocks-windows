@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Net;
 using System.Net.Sockets;
 using Shadowsocks.Util.Sockets;
 
-namespace Shadowsocks.Controller
+namespace Shadowsocks.Controller.Service
 {
-    class PortForwarder : Listener.Service
+    internal class PortForwarder : Listener.Service
     {
         private readonly int _targetPort;
 
@@ -17,30 +16,28 @@ namespace Shadowsocks.Controller
         public override bool Handle(byte[] firstPacket, int length, Socket socket, object state)
         {
             if (socket.ProtocolType != ProtocolType.Tcp)
-            {
                 return false;
-            }
             new Handler().Start(firstPacket, length, socket, _targetPort);
             return true;
         }
 
         private class Handler
         {
-            private byte[] _firstPacket;
-            private int _firstPacketLength;
-            private Socket _local;
-            private WrappedSocket _remote;
-            private bool _closed = false;
-            private bool _localShutdown = false;
-            private bool _remoteShutdown = false;
             private const int RecvSize = 2048;
-            // remote receive buffer
-            private byte[] remoteRecvBuffer = new byte[RecvSize];
-            // connection receive buffer
-            private byte[] connetionRecvBuffer = new byte[RecvSize];
 
             // instance-based lock
             private readonly object _Lock = new object();
+            private bool _closed;
+            private byte[] _firstPacket;
+            private int _firstPacketLength;
+            private Socket _local;
+            private bool _localShutdown;
+            private WrappedSocket _remote;
+            private bool _remoteShutdown;
+            // connection receive buffer
+            private readonly byte[] connetionRecvBuffer = new byte[RecvSize];
+            // remote receive buffer
+            private readonly byte[] remoteRecvBuffer = new byte[RecvSize];
 
             public void Start(byte[] firstPacket, int length, Socket socket, int targetPort)
             {
@@ -49,7 +46,7 @@ namespace Shadowsocks.Controller
                 _local = socket;
                 try
                 {
-                    EndPoint remoteEP = SocketUtil.GetEndPoint("127.0.0.1", targetPort);
+                    var remoteEP = SocketUtil.GetEndPoint("127.0.0.1", targetPort);
 
                     // Connect to the remote endpoint.
                     _remote = new WrappedSocket();
@@ -65,9 +62,7 @@ namespace Shadowsocks.Controller
             private void ConnectCallback(IAsyncResult ar)
             {
                 if (_closed)
-                {
                     return;
-                }
                 try
                 {
                     _remote.EndConnect(ar);
@@ -84,9 +79,7 @@ namespace Shadowsocks.Controller
             private void HandshakeReceive()
             {
                 if (_closed)
-                {
                     return;
-                }
                 try
                 {
                     _remote.BeginSend(_firstPacket, 0, _firstPacketLength, 0, StartPipe, null);
@@ -101,9 +94,7 @@ namespace Shadowsocks.Controller
             private void StartPipe(IAsyncResult ar)
             {
                 if (_closed)
-                {
                     return;
-                }
                 try
                 {
                     _remote.EndSend(ar);
@@ -122,12 +113,10 @@ namespace Shadowsocks.Controller
             private void PipeRemoteReceiveCallback(IAsyncResult ar)
             {
                 if (_closed)
-                {
                     return;
-                }
                 try
                 {
-                    int bytesRead = _remote.EndReceive(ar);
+                    var bytesRead = _remote.EndReceive(ar);
                     if (bytesRead > 0)
                     {
                         _local.BeginSend(remoteRecvBuffer, 0, bytesRead, 0, PipeConnectionSendCallback, null);
@@ -149,12 +138,10 @@ namespace Shadowsocks.Controller
             private void PipeConnectionReceiveCallback(IAsyncResult ar)
             {
                 if (_closed)
-                {
                     return;
-                }
                 try
                 {
-                    int bytesRead = _local.EndReceive(ar);
+                    var bytesRead = _local.EndReceive(ar);
                     if (bytesRead > 0)
                     {
                         _remote.BeginSend(connetionRecvBuffer, 0, bytesRead, 0, PipeRemoteSendCallback, null);
@@ -176,9 +163,7 @@ namespace Shadowsocks.Controller
             private void PipeRemoteSendCallback(IAsyncResult ar)
             {
                 if (_closed)
-                {
                     return;
-                }
                 try
                 {
                     _remote.EndSend(ar);
@@ -195,9 +180,7 @@ namespace Shadowsocks.Controller
             private void PipeConnectionSendCallback(IAsyncResult ar)
             {
                 if (_closed)
-                {
                     return;
-                }
                 try
                 {
                     _local.EndSend(ar);
@@ -214,9 +197,7 @@ namespace Shadowsocks.Controller
             private void CheckClose()
             {
                 if (_localShutdown && _remoteShutdown)
-                {
                     Close();
-                }
             }
 
             public void Close()
@@ -224,13 +205,10 @@ namespace Shadowsocks.Controller
                 lock (_Lock)
                 {
                     if (_closed)
-                    {
                         return;
-                    }
                     _closed = true;
                 }
                 if (_local != null)
-                {
                     try
                     {
                         _local.Shutdown(SocketShutdown.Both);
@@ -240,9 +218,7 @@ namespace Shadowsocks.Controller
                     {
                         Logging.LogUsefulException(e);
                     }
-                }
                 if (_remote != null)
-                {
                     try
                     {
                         _remote.Shutdown(SocketShutdown.Both);
@@ -252,7 +228,6 @@ namespace Shadowsocks.Controller
                     {
                         Logging.LogUsefulException(e);
                     }
-                }
             }
         }
     }

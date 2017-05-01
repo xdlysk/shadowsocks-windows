@@ -16,7 +16,7 @@ namespace Shadowsocks.Encryption
 
         static MbedTLS()
         {
-            string dllPath = Utils.GetTempPath(DLLNAME);
+            var dllPath = Utils.GetTempPath(DLLNAME);
             try
             {
                 FileManager.UncompressFile(dllPath, Resources.libsscrypto_dll);
@@ -33,7 +33,7 @@ namespace Shadowsocks.Encryption
 
         public static byte[] MD5(byte[] input)
         {
-            byte[] output = new byte[16];
+            var output = new byte[16];
             md5(input, (uint) input.Length, output);
             return output;
         }
@@ -45,7 +45,7 @@ namespace Shadowsocks.Encryption
         public static extern void md5(byte[] input, uint ilen, byte[] output);
 
         /// <summary>
-        /// Get cipher ctx size for unmanaged memory allocation
+        ///     Get cipher ctx size for unmanaged memory allocation
         /// </summary>
         /// <returns></returns>
         [DllImport(DLLNAME, CallingConvention = CallingConvention.Cdecl)]
