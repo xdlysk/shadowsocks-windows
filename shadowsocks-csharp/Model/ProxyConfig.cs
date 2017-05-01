@@ -19,7 +19,7 @@ namespace Shadowsocks.Model
 
         public ProxyConfig()
         {
-            useProxy = true;
+            useProxy = false;
             proxyType = PROXY_SOCKS5;
             proxyServer = "";
             proxyPort = 0;
