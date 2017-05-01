@@ -4,6 +4,9 @@ using Shadowsocks.Util.Sockets;
 
 namespace Shadowsocks.Controller.Service
 {
+    /// <summary>
+    /// 端口转发，这里将http请求转发到ssprivoxy，由此处理
+    /// </summary>
     internal class PortForwarder : Listener.Service
     {
         private readonly int _targetPort;
@@ -15,6 +18,7 @@ namespace Shadowsocks.Controller.Service
 
         public override bool Handle(byte[] firstPacket, int length, Socket socket, object state)
         {
+            //http[s]协议基于tcp协议
             if (socket.ProtocolType != ProtocolType.Tcp)
                 return false;
             new Handler().Start(firstPacket, length, socket, _targetPort);
@@ -26,7 +30,7 @@ namespace Shadowsocks.Controller.Service
             private const int RecvSize = 2048;
 
             // instance-based lock
-            private readonly object _Lock = new object();
+            private readonly object _lock = new object();
             private bool _closed;
             private byte[] _firstPacket;
             private int _firstPacketLength;
@@ -35,10 +39,17 @@ namespace Shadowsocks.Controller.Service
             private WrappedSocket _remote;
             private bool _remoteShutdown;
             // connection receive buffer
-            private readonly byte[] connetionRecvBuffer = new byte[RecvSize];
+            private readonly byte[] _connetionRecvBuffer = new byte[RecvSize];
             // remote receive buffer
-            private readonly byte[] remoteRecvBuffer = new byte[RecvSize];
+            private readonly byte[] _remoteRecvBuffer = new byte[RecvSize];
 
+            /// <summary>
+            /// 将数据转发到Privoxy
+            /// </summary>
+            /// <param name="firstPacket"></param>
+            /// <param name="length"></param>
+            /// <param name="socket"></param>
+            /// <param name="targetPort">Privoxy的监听端口</param>
             public void Start(byte[] firstPacket, int length, Socket socket, int targetPort)
             {
                 _firstPacket = firstPacket;
@@ -46,11 +57,11 @@ namespace Shadowsocks.Controller.Service
                 _local = socket;
                 try
                 {
-                    var remoteEP = SocketUtil.GetEndPoint("127.0.0.1", targetPort);
+                    var remoteEp = SocketUtil.GetEndPoint("127.0.0.1", targetPort);
 
                     // Connect to the remote endpoint.
                     _remote = new WrappedSocket();
-                    _remote.BeginConnect(remoteEP, ConnectCallback, null);
+                    _remote.BeginConnect(remoteEp, ConnectCallback, null);
                 }
                 catch (Exception e)
                 {
@@ -98,9 +109,9 @@ namespace Shadowsocks.Controller.Service
                 try
                 {
                     _remote.EndSend(ar);
-                    _remote.BeginReceive(remoteRecvBuffer, 0, RecvSize, 0,
+                    _remote.BeginReceive(_remoteRecvBuffer, 0, RecvSize, 0,
                         PipeRemoteReceiveCallback, null);
-                    _local.BeginReceive(connetionRecvBuffer, 0, RecvSize, 0,
+                    _local.BeginReceive(_connetionRecvBuffer, 0, RecvSize, 0,
                         PipeConnectionReceiveCallback, null);
                 }
                 catch (Exception e)
@@ -119,7 +130,7 @@ namespace Shadowsocks.Controller.Service
                     var bytesRead = _remote.EndReceive(ar);
                     if (bytesRead > 0)
                     {
-                        _local.BeginSend(remoteRecvBuffer, 0, bytesRead, 0, PipeConnectionSendCallback, null);
+                        _local.BeginSend(_remoteRecvBuffer, 0, bytesRead, 0, PipeConnectionSendCallback, null);
                     }
                     else
                     {
@@ -144,7 +155,7 @@ namespace Shadowsocks.Controller.Service
                     var bytesRead = _local.EndReceive(ar);
                     if (bytesRead > 0)
                     {
-                        _remote.BeginSend(connetionRecvBuffer, 0, bytesRead, 0, PipeRemoteSendCallback, null);
+                        _remote.BeginSend(_connetionRecvBuffer, 0, bytesRead, 0, PipeRemoteSendCallback, null);
                     }
                     else
                     {
@@ -167,7 +178,7 @@ namespace Shadowsocks.Controller.Service
                 try
                 {
                     _remote.EndSend(ar);
-                    _local.BeginReceive(connetionRecvBuffer, 0, RecvSize, 0,
+                    _local.BeginReceive(_connetionRecvBuffer, 0, RecvSize, 0,
                         PipeConnectionReceiveCallback, null);
                 }
                 catch (Exception e)
@@ -184,7 +195,7 @@ namespace Shadowsocks.Controller.Service
                 try
                 {
                     _local.EndSend(ar);
-                    _remote.BeginReceive(remoteRecvBuffer, 0, RecvSize, 0,
+                    _remote.BeginReceive(_remoteRecvBuffer, 0, RecvSize, 0,
                         PipeRemoteReceiveCallback, null);
                 }
                 catch (Exception e)
@@ -200,9 +211,9 @@ namespace Shadowsocks.Controller.Service
                     Close();
             }
 
-            public void Close()
+            private void Close()
             {
-                lock (_Lock)
+                lock (_lock)
                 {
                     if (_closed)
                         return;

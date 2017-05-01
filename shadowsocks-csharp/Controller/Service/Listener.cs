@@ -11,7 +11,7 @@ namespace Shadowsocks.Controller.Service
     {
         private readonly List<IService> _services;
         private Configuration _config;
-        private bool _shareOverLAN;
+        private bool _shareOverLan;
         private Socket _tcpSocket;
         private Socket _udpSocket;
 
@@ -34,10 +34,10 @@ namespace Shadowsocks.Controller.Service
         public void Start(Configuration config)
         {
             _config = config;
-            _shareOverLAN = config.shareOverLan;
+            _shareOverLan = config.ShareOverLan;
 
-            if (CheckIfPortInUse(_config.localPort))
-                throw new Exception(I18N.GetString("Port already in use"));
+            if (CheckIfPortInUse(_config.LocalPort))
+                throw new Exception("Port already in use");
 
             try
             {
@@ -47,9 +47,9 @@ namespace Shadowsocks.Controller.Service
                 _tcpSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 _udpSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 //若接受局域网连接，则绑定ipaddress.any否则绑定loopback
-                var localEndPoint = _shareOverLAN
-                    ? new IPEndPoint(IPAddress.Any, _config.localPort)
-                    : new IPEndPoint(IPAddress.Loopback, _config.localPort);
+                var localEndPoint = _shareOverLan
+                    ? new IPEndPoint(IPAddress.Any, _config.LocalPort)
+                    : new IPEndPoint(IPAddress.Loopback, _config.LocalPort);
 
                 // Bind the socket to the local endpoint and listen for incoming connections.
                 _tcpSocket.Bind(localEndPoint);

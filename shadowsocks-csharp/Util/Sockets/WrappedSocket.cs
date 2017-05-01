@@ -9,7 +9,7 @@ namespace Shadowsocks.Util.Sockets
      * A wrapped socket class which support both ipv4 and ipv6 based on the
      * connected remote endpoint.
      * 
-     * If the server address is host name, then it may have both ipv4 and ipv6 address
+     * If the ServerIp address is host name, then it may have both ipv4 and ipv6 address
      * after resolving. The main idea is we don't want to resolve and choose the address
      * by ourself. Instead, Socket.ConnectAsync() do handle this thing internally by trying
      * each address and returning an established socket connection.
@@ -26,16 +26,20 @@ namespace Shadowsocks.Util.Sockets
         public EndPoint LocalEndPoint => _activeSocket?.LocalEndPoint;
         private bool Connected => _activeSocket != null;
 
-
-        public void BeginConnect(EndPoint remoteEP, AsyncCallback callback, object state)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="remoteEp">远程代理服务器终结点</param>
+        /// <param name="callback"></param>
+        /// <param name="state"></param>
+        public void BeginConnect(EndPoint remoteEp, AsyncCallback callback, object state)
         {
             if (_disposed)
                 throw new ObjectDisposedException(GetType().FullName);
             if (Connected)
                 throw new SocketException((int) SocketError.IsConnected);
 
-            var arg = new SocketAsyncEventArgs();
-            arg.RemoteEndPoint = remoteEP;
+            var arg = new SocketAsyncEventArgs {RemoteEndPoint = remoteEp};
             arg.Completed += OnTcpConnectCompleted;
             arg.UserToken = new TcpUserToken(callback, state);
 

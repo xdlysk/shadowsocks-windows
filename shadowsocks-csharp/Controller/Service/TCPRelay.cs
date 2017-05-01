@@ -47,7 +47,7 @@ namespace Shadowsocks.Controller.Service
                 {
                     _lastSweepTime = now;
                     foreach (var handler1 in Handlers)
-                        if (now - handler1.lastActivity > TimeSpan.FromSeconds(900))
+                        if (now - handler1.LastActivity > TimeSpan.FromSeconds(900))
                             handlersToClose.Add(handler1);
                 }
             }
@@ -142,14 +142,9 @@ namespace Shadowsocks.Controller.Service
         private Server _server;
 
         private DateTime _startConnectTime;
-        private DateTime _startReceivingTime;
-        private DateTime _startSendingTime;
         private readonly TCPRelay _tcprelay;
 
-        private int _totalRead;
-        private int _totalWrite;
-
-        public DateTime lastActivity;
+        public DateTime LastActivity;
 
         public TCPHandler(ShadowsocksController controller, Configuration config, TCPRelay tcprelay, Socket socket)
         {
@@ -157,20 +152,20 @@ namespace Shadowsocks.Controller.Service
             _config = config;
             _tcprelay = tcprelay;
             _connection = socket;
-            _proxyTimeout = config.proxy.proxyTimeout*1000;
-            _serverTimeout = config.GetCurrentServer().timeout*1000;
+            _proxyTimeout = config.Proxy.ProxyTimeout*1000;
+            _serverTimeout = config.GetCurrentServer().Timeout*1000;
 
-            lastActivity = DateTime.Now;
+            LastActivity = DateTime.Now;
         }
 
         public void CreateRemote()
         {
             var server = _controller.GetAServer(IStrategyCallerType.TCP, (IPEndPoint) _connection.RemoteEndPoint,
                 _destEndPoint);
-            if ((server == null) || (server.server == ""))
-                throw new ArgumentException("No server configured");
+            if ((server == null) || (server.ServerIp == ""))
+                throw new ArgumentException("No ServerIp configured");
 
-            _encryptor = EncryptorFactory.GetEncryptor(server.method, server.password);
+            _encryptor = EncryptorFactory.GetEncryptor(server.Method, server.Password);
 
             _server = server;
 
@@ -311,7 +306,7 @@ namespace Shadowsocks.Controller.Service
                         }
                         else if (_command == CMD_UDP_ASSOC)
                         {
-                            ReadAddress(HandleUDPAssociate);
+                            ReadAddress(HandleUdpAssociate);
                         }
                     }
                 }
@@ -419,9 +414,8 @@ namespace Shadowsocks.Controller.Service
                             _addrBufLength = EncryptorBase.ADDR_ATYP_LEN + 16 + EncryptorBase.ADDR_PORT_LEN;
                             break;
                     }
+                    Logging.Info($"connect to {dstAddr}:{dstPort}");
 
-                    if (_config.isVerboseLogging)
-                        Logging.Info($"connect to {dstAddr}:{dstPort}");
 
                     _destEndPoint = SocketUtil.GetEndPoint(dstAddr, dstPort);
 
@@ -440,7 +434,7 @@ namespace Shadowsocks.Controller.Service
             }
         }
 
-        private void HandleUDPAssociate()
+        private void HandleUdpAssociate()
         {
             var endPoint = (IPEndPoint) _connection.LocalEndPoint;
             var address = endPoint.Address.GetAddressBytes();
@@ -498,21 +492,21 @@ namespace Shadowsocks.Controller.Service
 
                 // Setting up proxy
                 IProxy remote;
-                EndPoint proxyEP = null;
-                if (_config.proxy.useProxy)
+                EndPoint proxyEp = null;
+                if (_config.Proxy.Enabled)
                 {
-                    switch (_config.proxy.proxyType)
+                    switch (_config.Proxy.ProxyType)
                     {
-                        case ProxyConfig.PROXY_SOCKS5:
+                        case ProxyType.Socks5:
                             remote = new Socks5Proxy();
                             break;
-                        case ProxyConfig.PROXY_HTTP:
+                        case ProxyType.Http:
                             remote = new HttpProxy();
                             break;
                         default:
                             throw new NotSupportedException("Unknown forward proxy.");
                     }
-                    proxyEP = SocketUtil.GetEndPoint(_config.proxy.proxyServer, _config.proxy.proxyPort);
+                    proxyEp = SocketUtil.GetEndPoint(_config.Proxy.ProxyServer, _config.Proxy.ProxyPort);
                 }
                 else
                 {
@@ -536,13 +530,14 @@ namespace Shadowsocks.Controller.Service
                 proxyTimer.Enabled = true;
 
                 proxyTimer.Session = session;
-                proxyTimer.DestEndPoint = SocketUtil.GetEndPoint(_server.server, _server.server_port);
+                proxyTimer.DestEndPoint = SocketUtil.GetEndPoint(_server.ServerIp, _server.ServerPort);
                 proxyTimer.Server = _server;
 
                 _proxyConnected = false;
 
-                // Connect to the proxy server.
-                remote.BeginConnectProxy(proxyEP, ProxyConnectCallback,
+                // Connect to the proxy ServerIp.
+                //连接代理服务器
+                remote.BeginConnectProxy(proxyEp, ProxyConnectCallback,
                     new AsyncSession<ProxyTimer>(remote, proxyTimer));
             }
             catch (Exception e)
@@ -589,10 +584,9 @@ namespace Shadowsocks.Controller.Service
                 remote.EndConnectProxy(ar);
 
                 _proxyConnected = true;
-
-                if (_config.isVerboseLogging)
-                    if (!(remote is DirectConnect))
-                        Logging.Info($"Socket connected to proxy {remote.ProxyEndPoint}");
+                
+                if (!(remote is DirectConnect))
+                    Logging.Info($"Socket connected to proxy {remote.ProxyEndPoint}");
 
                 _startConnectTime = DateTime.Now;
                 var connectTimer = new ServerTimer(_serverTimeout) {AutoReset = false};
@@ -652,9 +646,8 @@ namespace Shadowsocks.Controller.Service
                 remote.EndConnectDest(ar);
 
                 _destConnected = true;
-
-                if (_config.isVerboseLogging)
-                    Logging.Info($"Socket connected to ss server: {_server.FriendlyName()}");
+                
+                Logging.Info($"Socket connected to ss ServerIp: {_server.FriendlyName()}");
 
                 var latency = DateTime.Now - _startConnectTime;
                 var strategy = _controller.GetCurrentStrategy();
@@ -694,7 +687,6 @@ namespace Shadowsocks.Controller.Service
             if (_closed) return;
             try
             {
-                _startReceivingTime = DateTime.Now;
                 session.Remote.BeginReceive(_remoteRecvBuffer, 0, RecvSize, SocketFlags.None,
                     PipeRemoteReceiveCallback, session);
 
@@ -716,11 +708,10 @@ namespace Shadowsocks.Controller.Service
             {
                 var session = (AsyncSession) ar.AsyncState;
                 var bytesRead = session.Remote.EndReceive(ar);
-                _totalRead += bytesRead;
                 if (bytesRead > 0)
                 {
-                    lastActivity = DateTime.Now;
-                    var bytesToSend = -1;
+                    LastActivity = DateTime.Now;
+                    int bytesToSend;
                     lock (_decryptionLock)
                     {
                         try
@@ -792,7 +783,6 @@ namespace Shadowsocks.Controller.Service
 
         private void SendToServer(int length, AsyncSession session)
         {
-            _totalWrite += length;
             int bytesToSend;
             lock (_encryptionLock)
             {
@@ -807,7 +797,6 @@ namespace Shadowsocks.Controller.Service
                     return;
                 }
             }
-            _startSendingTime = DateTime.Now;
             session.Remote.BeginSend(_connetionSendBuffer, 0, bytesToSend, SocketFlags.None,
                 PipeRemoteSendCallback, new object[] {session, bytesToSend});
             var strategy = _controller.GetCurrentStrategy();

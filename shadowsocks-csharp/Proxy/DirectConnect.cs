@@ -15,7 +15,7 @@ namespace Shadowsocks.Proxy
         public EndPoint ProxyEndPoint { get; } = new FakeEndPoint();
         public EndPoint DestEndPoint { get; private set; }
 
-        public void BeginConnectProxy(EndPoint remoteEP, AsyncCallback callback, object state)
+        public void BeginConnectProxy(EndPoint remoteEp, AsyncCallback callback, object state)
         {
             // do nothing
 

@@ -31,13 +31,13 @@ namespace Shadowsocks.Controller.Service
                 return false;
             var udpState = (Listener.UDPState) state;
             var remoteEndPoint = (IPEndPoint) udpState.remoteEndPoint;
-            var handler = _cache.get(remoteEndPoint);
+            var handler = _cache.Get(remoteEndPoint);
             if (handler == null)
             {
                 handler = new UDPHandler(socket,
                     _controller.GetAServer(IStrategyCallerType.UDP, remoteEndPoint, null /*TODO: fix this*/),
                     remoteEndPoint);
-                _cache.add(remoteEndPoint, handler);
+                _cache.Add(remoteEndPoint, handler);
             }
             handler.Send(firstPacket, length);
             handler.Receive();
@@ -63,19 +63,19 @@ namespace Shadowsocks.Controller.Service
 
                 // TODO async resolving
                 IPAddress ipAddress;
-                var parsed = IPAddress.TryParse(server.server, out ipAddress);
+                var parsed = IPAddress.TryParse(server.ServerIp, out ipAddress);
                 if (!parsed)
                 {
-                    var ipHostInfo = Dns.GetHostEntry(server.server);
+                    var ipHostInfo = Dns.GetHostEntry(server.ServerIp);
                     ipAddress = ipHostInfo.AddressList[0];
                 }
-                _remoteEndPoint = new IPEndPoint(ipAddress, server.server_port);
+                _remoteEndPoint = new IPEndPoint(ipAddress, server.ServerPort);
                 _remote = new Socket(_remoteEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
             }
 
             public void Send(byte[] data, int length)
             {
-                var encryptor = EncryptorFactory.GetEncryptor(_server.method, _server.password);
+                var encryptor = EncryptorFactory.GetEncryptor(_server.Method, _server.Password);
                 var dataIn = new byte[length - 3];
                 Array.Copy(data, 3, dataIn, 0, length - 3);
                 var dataOut = new byte[65536]; // enough space for AEAD ciphers
@@ -103,7 +103,7 @@ namespace Shadowsocks.Controller.Service
                     var dataOut = new byte[bytesRead];
                     int outlen;
 
-                    var encryptor = EncryptorFactory.GetEncryptor(_server.method, _server.password);
+                    var encryptor = EncryptorFactory.GetEncryptor(_server.Method, _server.Password);
                     encryptor.DecryptUDP(_buffer, bytesRead, dataOut, out outlen);
 
                     var sendBuf = new byte[outlen + 3];
@@ -163,7 +163,7 @@ namespace Shadowsocks.Controller.Service
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public V get(K key)
+        public V Get(K key)
         {
             LinkedListNode<LRUCacheItem<K, V>> node;
             if (cacheMap.TryGetValue(key, out node))
@@ -177,7 +177,7 @@ namespace Shadowsocks.Controller.Service
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void add(K key, V val)
+        public void Add(K key, V val)
         {
             if (cacheMap.Count >= capacity)
                 RemoveFirst();

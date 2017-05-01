@@ -5,31 +5,32 @@ namespace Shadowsocks.Model
     [Serializable]
     public class ProxyConfig
     {
-        public const int PROXY_SOCKS5 = 0;
-        public const int PROXY_HTTP = 1;
-
-        public const int MaxProxyTimeoutSec = 10;
+        
         private const int DefaultProxyTimeoutSec = 3;
-        public int proxyPort;
-        public string proxyServer;
-        public int proxyTimeout;
-        public int proxyType;
+        public int ProxyPort { get; set; }
+        public string ProxyServer { get; set; }
+        /// <summary>
+        /// sec
+        /// </summary>
+        public int ProxyTimeout { get; set; }
+        public ProxyType ProxyType { get; set; }
 
-        public bool useProxy;
+        public bool Enabled { get; set; }
 
         public ProxyConfig()
         {
-            useProxy = false;
-            proxyType = PROXY_SOCKS5;
-            proxyServer = "";
-            proxyPort = 0;
-            proxyTimeout = DefaultProxyTimeoutSec;
+            Enabled = false;
+            ProxyType = ProxyType.None;
+            ProxyServer = "";
+            ProxyPort = 0;
+            ProxyTimeout = DefaultProxyTimeoutSec;
         }
+    }
 
-        public void CheckConfig()
-        {
-            if ((proxyType < PROXY_SOCKS5) || (proxyType > PROXY_HTTP))
-                proxyType = PROXY_SOCKS5;
-        }
+    public enum ProxyType
+    {
+        None=0,
+        Socks5,
+        Http
     }
 }

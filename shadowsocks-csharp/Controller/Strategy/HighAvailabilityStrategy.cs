@@ -9,46 +9,40 @@ namespace Shadowsocks.Controller.Strategy
     {
         private readonly ShadowsocksController _controller;
         protected ServerStatus _currentServer;
-        private Random _random;
         protected Dictionary<Server, ServerStatus> _serverStatus;
 
         public HighAvailabilityStrategy(ShadowsocksController controller)
         {
             _controller = controller;
-            _random = new Random();
             _serverStatus = new Dictionary<Server, ServerStatus>();
         }
 
-        public string Name
-        {
-            get { return I18N.GetString("High Availability"); }
-        }
+        public string Name => "High Availability";
 
-        public string ID
-        {
-            get { return "com.shadowsocks.strategy.ha"; }
-        }
+        public string ID => "com.shadowsocks.strategy.ha";
 
         public void ReloadServers()
         {
             // make a copy to avoid locking
             var newServerStatus = new Dictionary<Server, ServerStatus>(_serverStatus);
 
-            foreach (var server in _controller.GetCurrentConfiguration().configs)
+            foreach (var server in _controller.GetCurrentConfiguration().RemoteServers)
                 if (!newServerStatus.ContainsKey(server))
                 {
-                    var status = new ServerStatus();
-                    status.server = server;
-                    status.lastFailure = DateTime.MinValue;
-                    status.lastRead = DateTime.Now;
-                    status.lastWrite = DateTime.Now;
-                    status.latency = new TimeSpan(0, 0, 0, 0, 10);
-                    status.lastTimeDetectLatency = DateTime.Now;
+                    var status = new ServerStatus
+                    {
+                        server = server,
+                        lastFailure = DateTime.MinValue,
+                        lastRead = DateTime.Now,
+                        lastWrite = DateTime.Now,
+                        latency = new TimeSpan(0, 0, 0, 0, 10),
+                        lastTimeDetectLatency = DateTime.Now
+                    };
                     newServerStatus[server] = status;
                 }
                 else
                 {
-                    // update settings for existing server
+                    // update settings for existing ServerIp
                     newServerStatus[server].server = server;
                 }
             _serverStatus = newServerStatus;
@@ -60,9 +54,7 @@ namespace Shadowsocks.Controller.Strategy
         {
             if (type == IStrategyCallerType.TCP)
                 ChooseNewServer();
-            if (_currentServer == null)
-                return null;
-            return _currentServer.server;
+            return _currentServer?.server;
         }
 
         public void UpdateLatency(Server server, TimeSpan latency)
@@ -113,7 +105,6 @@ namespace Shadowsocks.Controller.Strategy
 
         public void ChooseNewServer()
         {
-            var oldServer = _currentServer;
             var servers = new List<ServerStatus>(_serverStatus.Values);
             var now = DateTime.Now;
             foreach (var status in servers)
@@ -127,7 +118,7 @@ namespace Shadowsocks.Controller.Strategy
                     (Math.Min(2000, status.latency.TotalMilliseconds)/
                      (1 + (now - status.lastTimeDetectLatency).TotalSeconds/30/10) +
                      -0.5*200*Math.Min(5, (status.lastRead - status.lastWrite).TotalSeconds));
-                Logging.Debug(string.Format("server: {0} latency:{1} score: {2}", status.server.FriendlyName(),
+                Logging.Debug(string.Format("ServerIp: {0} latency:{1} score: {2}", status.server.FriendlyName(),
                     status.latency, status.score));
             }
             ServerStatus max = null;
@@ -145,7 +136,7 @@ namespace Shadowsocks.Controller.Strategy
                 if ((_currentServer == null) || (max.score - _currentServer.score > 200))
                 {
                     _currentServer = max;
-                    Logging.Info($"HA switching to server: {_currentServer.server.FriendlyName()}");
+                    Logging.Info($"HA switching to ServerIp: {_currentServer.server.FriendlyName()}");
                 }
         }
 

@@ -15,15 +15,9 @@ namespace Shadowsocks.Controller.Strategy
             _random = new Random();
         }
 
-        public string Name
-        {
-            get { return I18N.GetString("Load Balance"); }
-        }
+        public string Name => "Load Balance";
 
-        public string ID
-        {
-            get { return "com.shadowsocks.strategy.balancing"; }
-        }
+        public string ID => "com.shadowsocks.strategy.balancing";
 
         public void ReloadServers()
         {
@@ -32,12 +26,8 @@ namespace Shadowsocks.Controller.Strategy
 
         public Server GetAServer(IStrategyCallerType type, IPEndPoint localIPEndPoint, EndPoint destEndPoint)
         {
-            var configs = _controller.GetCurrentConfiguration().configs;
-            int index;
-            if (type == IStrategyCallerType.TCP)
-                index = _random.Next();
-            else
-                index = localIPEndPoint.GetHashCode();
+            var configs = _controller.GetCurrentConfiguration().RemoteServers;
+            var index = type == IStrategyCallerType.TCP ? _random.Next() : localIPEndPoint.GetHashCode();
             return configs[index%configs.Count];
         }
 

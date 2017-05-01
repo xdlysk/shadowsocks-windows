@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -6,28 +7,32 @@ using System.Timers;
 using System.Windows.Forms;
 using Microsoft.Win32;
 using Shadowsocks.Controller;
+using Shadowsocks.Controller.Strategy;
+using Shadowsocks.Model;
 using Shadowsocks.Util;
 using Shadowsocks.View;
 using Timer = System.Timers.Timer;
 
 namespace Shadowsocks
 {
-    internal static class Program
+    public static class Program
     {
         private static int exited;
         public static ShadowsocksController MainController { get; private set; }
+
+        public static ShadowsocksController SideController { get; set; }
         public static MenuViewController MenuController { get; private set; }
 
         /// <summary>
         ///     应用程序的主入口点。
         /// </summary>
         [STAThread]
-        private static void Main()
+        public static void Main()
         {
             // Check OS since we are using dual-mode socket
             if (!Utils.IsWinVistaOrHigher())
             {
-                MessageBox.Show(I18N.GetString("Unsupported operating system, use Windows Vista at least."),
+                MessageBox.Show("Unsupported operating system, use Windows Vista at least.",
                     "Shadowsocks Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
@@ -35,7 +40,7 @@ namespace Shadowsocks
             // Check .NET Framework version
             if (!Utils.IsSupportedRuntimeVersion())
             {
-                MessageBox.Show(I18N.GetString("Unsupported .NET Framework, please update to 4.6.2 or later."),
+                MessageBox.Show("Unsupported .NET Framework, please update to 4.6.2 or later.",
                     "Shadowsocks Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
                 Process.Start(
@@ -63,12 +68,9 @@ namespace Shadowsocks
                     {
                         var oldProcess = oldProcesses[0];
                     }
-                    MessageBox.Show(I18N.GetString("Find Shadowsocks icon in your notify tray.")
+                    MessageBox.Show("Find Shadowsocks icon in your notify tray."
                                     + Environment.NewLine
-                                    +
-                                    I18N.GetString(
-                                        "If you want to start multiple Shadowsocks, make a copy in another directory."),
-                        I18N.GetString("Shadowsocks is already running."));
+                                    +"If you want to start multiple Shadowsocks, make a copy in another directory.","Shadowsocks is already running.");
                     return;
                 }
                 Directory.SetCurrentDirectory(Application.StartupPath);
@@ -84,9 +86,26 @@ namespace Shadowsocks
 #else
                 Logging.OpenLogFile();
 #endif
-                MainController = new ShadowsocksController();
+                MainController = new ShadowsocksController(new Configuration
+                {
+                    LocalPort = 1080,
+                    Proxy = new ProxyConfig
+                    {
+                     Enabled   = false
+                    },
+                    ShareOverLan = true,
+                    Strategy = new FixedStrategy(new Server
+                    {
+                        Method = "aes-256-cfb",
+                        Password = "jeqee",
+                        ServerIp = "60.169.115.99",
+                        ServerPort = 15420,
+                        Timeout = 600
+                    })
+                });
                 MenuController = new MenuViewController(MainController);
                 MainController.Start();
+
                 Application.Run();
             }
         }
@@ -98,7 +117,7 @@ namespace Shadowsocks
                 var errMsg = e.ExceptionObject.ToString();
                 Logging.Error(errMsg);
                 MessageBox.Show(
-                    $"{I18N.GetString("Unexpected error, shadowsocks will exit. Please report to")} https://github.com/shadowsocks/shadowsocks-windows/issues {Environment.NewLine}{errMsg}",
+                    $"{"Unexpected error, shadowsocks will exit. Please report to"} https://github.com/shadowsocks/shadowsocks-windows/issues {Environment.NewLine}{errMsg}",
                     "Shadowsocks non-UI Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Application.Exit();
             }
@@ -111,7 +130,7 @@ namespace Shadowsocks
                 string errorMsg = $"Exception Detail: {Environment.NewLine}{e.Exception}";
                 Logging.Error(errorMsg);
                 MessageBox.Show(
-                    $"{I18N.GetString("Unexpected error, shadowsocks will exit. Please report to")} https://github.com/shadowsocks/shadowsocks-windows/issues {Environment.NewLine}{errorMsg}",
+                    $"{"Unexpected error, shadowsocks will exit. Please report to"} https://github.com/shadowsocks/shadowsocks-windows/issues {Environment.NewLine}{errorMsg}",
                     "Shadowsocks UI Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Application.Exit();
             }

@@ -34,11 +34,11 @@ namespace Shadowsocks.Proxy
         public EndPoint DestEndPoint { get; private set; }
 
 
-        public void BeginConnectProxy(EndPoint remoteEP, AsyncCallback callback, object state)
+        public void BeginConnectProxy(EndPoint remoteEp, AsyncCallback callback, object state)
         {
-            ProxyEndPoint = remoteEP;
+            ProxyEndPoint = remoteEp;
 
-            _remote.BeginConnect(remoteEP, callback, state);
+            _remote.BeginConnect(remoteEp, callback, state);
         }
 
         public void EndConnectProxy(IAsyncResult asyncResult)
@@ -54,9 +54,11 @@ namespace Shadowsocks.Proxy
 
             var b = Encoding.UTF8.GetBytes(request);
 
-            var st = new HttpState();
-            st.Callback = callback;
-            st.AsyncState = state;
+            var st = new HttpState
+            {
+                Callback = callback,
+                AsyncState = state
+            };
 
             _remote.BeginSend(b, 0, b.Length, 0, HttpRequestSendCallback, st);
         }
@@ -125,7 +127,7 @@ namespace Shadowsocks.Proxy
 
             if (st.innerState.ex == null)
                 if (!_established)
-                    st.innerState.ex = new Exception(I18N.GetString("Proxy request failed"));
+                    st.innerState.ex = new Exception("Proxy request failed");
             st.innerState.Callback?.Invoke(st);
         }
 

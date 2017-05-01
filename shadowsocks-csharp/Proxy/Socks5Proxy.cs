@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using Shadowsocks.Controller;
 using Shadowsocks.Util.Sockets;
 
 namespace Shadowsocks.Proxy
@@ -16,10 +15,17 @@ namespace Shadowsocks.Proxy
         private readonly WrappedSocket _remote = new WrappedSocket();
 
         public EndPoint LocalEndPoint => _remote.LocalEndPoint;
+        /// <summary>
+        /// 远程代理服务器终结点
+        /// </summary>
         public EndPoint ProxyEndPoint { get; private set; }
+
+        /// <summary>
+        /// 最终目的终结点
+        /// </summary>
         public EndPoint DestEndPoint { get; private set; }
 
-        public void BeginConnectProxy(EndPoint remoteEP, AsyncCallback callback, object state)
+        public void BeginConnectProxy(EndPoint remoteEp, AsyncCallback callback, object state)
         {
             var st = new Socks5State
             {
@@ -27,9 +33,9 @@ namespace Shadowsocks.Proxy
                 AsyncState = state
             };
 
-            ProxyEndPoint = remoteEP;
+            ProxyEndPoint = remoteEp;
 
-            _remote.BeginConnect(remoteEP, ConnectCallback, st);
+            _remote.BeginConnect(remoteEp, ConnectCallback, st);
         }
 
         public void EndConnectProxy(IAsyncResult asyncResult)
@@ -44,14 +50,14 @@ namespace Shadowsocks.Proxy
         {
             DestEndPoint = destEndPoint;
 
-            byte[] request = null;
-            byte atyp = 0;
+            byte[] request;
+            byte atyp;
             int port;
 
             var dep = destEndPoint as DnsEndPoint;
             if (dep != null)
             {
-                // is a domain name, we will leave it to server
+                // is a domain name, we will leave it to ServerIp
 
                 atyp = 3; // DOMAINNAME
                 var enc = Encoding.UTF8;
@@ -76,7 +82,7 @@ namespace Shadowsocks.Proxy
                         atyp = 4; // IP V6 address
                         break;
                     default:
-                        throw new Exception(I18N.GetString("Proxy request failed"));
+                        throw new Exception("Proxy request failed");
                 }
                 port = ((IPEndPoint) DestEndPoint).Port;
                 var addr = ((IPEndPoint) DestEndPoint).Address.GetAddressBytes();
@@ -184,11 +190,11 @@ namespace Shadowsocks.Proxy
                 if (bytesRead >= 2)
                 {
                     if ((_receiveBuffer[0] != 5) || (_receiveBuffer[1] != 0))
-                        ex = new Exception(I18N.GetString("Proxy handshake failed"));
+                        ex = new Exception("Proxy handshake failed");
                 }
                 else
                 {
-                    ex = new Exception(I18N.GetString("Proxy handshake failed"));
+                    ex = new Exception("Proxy handshake failed");
                 }
             }
             catch (Exception ex2)
@@ -238,20 +244,20 @@ namespace Shadowsocks.Proxy
                                 _remote.BeginReceive(_receiveBuffer, 0, 16 + 2, 0, Socks5ReplyReceiveCallback2, state);
                                 break;
                             default:
-                                state.Ex = new Exception(I18N.GetString("Proxy request failed"));
+                                state.Ex = new Exception("Proxy request failed");
                                 state.Callback?.Invoke(new FakeAsyncResult(ar, state));
                                 break;
                         }
                     }
                     else
                     {
-                        state.Ex = new Exception(I18N.GetString("Proxy request failed"));
+                        state.Ex = new Exception("Proxy request failed");
                         state.Callback?.Invoke(new FakeAsyncResult(ar, state));
                     }
                 }
                 else
                 {
-                    state.Ex = new Exception(I18N.GetString("Proxy request failed"));
+                    state.Ex = new Exception("Proxy request failed");
                     state.Callback?.Invoke(new FakeAsyncResult(ar, state));
                 }
             }
@@ -273,7 +279,7 @@ namespace Shadowsocks.Proxy
                 var bytesNeedSkip = state.BytesToRead;
 
                 if (bytesRead < bytesNeedSkip)
-                    ex = new Exception(I18N.GetString("Proxy request failed"));
+                    ex = new Exception("Proxy request failed");
             }
             catch (Exception ex2)
             {

@@ -28,22 +28,22 @@ namespace Shadowsocks.Controller.Strategy
         void ReloadServers();
 
         /*
-         * Get a new server to use in TCPRelay or UDPRelay
+         * Get a new ServerIp to use in TCPRelay or UDPRelay
          */
         Server GetAServer(IStrategyCallerType type, IPEndPoint localIPEndPoint, EndPoint destEndPoint);
 
         /*
-         * TCPRelay will call this when latency of a server detected
+         * TCPRelay will call this when latency of a ServerIp detected
          */
         void UpdateLatency(Server server, TimeSpan latency);
 
         /*
-         * TCPRelay will call this when reading from a server
+         * TCPRelay will call this when reading from a ServerIp
          */
         void UpdateLastRead(Server server);
 
         /*
-         * TCPRelay will call this when writing to a server
+         * TCPRelay will call this when writing to a ServerIp
          */
         void UpdateLastWrite(Server server);
 

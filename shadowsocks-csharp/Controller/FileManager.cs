@@ -26,6 +26,10 @@ namespace Shadowsocks.Controller
 
         public static void UncompressFile(string fileName, byte[] content)
         {
+            if (File.Exists(fileName))
+            {
+                return;
+            }
             // Because the uncompressed size of the file is unknown,
             // we are using an arbitrary buffer size.
             var buffer = new byte[4096];

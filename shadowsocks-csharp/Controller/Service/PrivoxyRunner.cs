@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Windows.Forms;
 using Shadowsocks.Model;
 using Shadowsocks.Properties;
 using Shadowsocks.Util;
@@ -15,45 +12,36 @@ namespace Shadowsocks.Controller.Service
 {
     internal class PrivoxyRunner
     {
-        private static readonly int _uid;
-        private static readonly string _uniqueConfigFile;
-        private static readonly Job _privoxyJob;
         private Process _process;
+        private static readonly Job PrivoxyJob;
 
         static PrivoxyRunner()
         {
-            try
-            {
-                _uid = Application.StartupPath.GetHashCode();
-                    // Currently we use ss's StartupPath to identify different Privoxy instance.
-                _uniqueConfigFile = $"privoxy_{_uid}.conf";
-                _privoxyJob = new Job();
-
-                FileManager.UncompressFile(Utils.GetTempPath("ss_privoxy.exe"), Resources.privoxy_exe);
-                FileManager.UncompressFile(Utils.GetTempPath("mgwz.dll"), Resources.mgwz_dll);
-            }
-            catch (IOException e)
-            {
-                Logging.LogUsefulException(e);
-            }
+            PrivoxyJob = new Job();
         }
 
         public int RunningPort { get; private set; }
 
         public void Start(Configuration configuration)
         {
+            
+            string uniqueConfigFile = $"privoxy_{DateTime.Now.Ticks}.conf";
+
+            FileManager.UncompressFile(Utils.GetTempPath("ss_privoxy.exe"), Resources.privoxy_exe);
+            FileManager.UncompressFile(Utils.GetTempPath("mgwz.dll"), Resources.mgwz_dll);
+
             if (_process == null)
             {
-                var existingPrivoxy = Process.GetProcessesByName("ss_privoxy");
-                foreach (var p in existingPrivoxy.Where(IsChildProcess))
-                    KillProcess(p);
+                //var existingPrivoxy = Process.GetProcessesByName("ss_privoxy");
+                //foreach (var p in existingPrivoxy.Where(IsChildProcess))
+                //    KillProcess(p);
                 var privoxyConfig = Resources.privoxy_conf;
                 RunningPort = GetFreePort();
-                privoxyConfig = privoxyConfig.Replace("__SOCKS_PORT__", configuration.localPort.ToString());
+                privoxyConfig = privoxyConfig.Replace("__SOCKS_PORT__", configuration.LocalPort.ToString());
                 privoxyConfig = privoxyConfig.Replace("__PRIVOXY_BIND_PORT__", RunningPort.ToString());
                 privoxyConfig = privoxyConfig.Replace("__PRIVOXY_BIND_IP__",
-                    configuration.shareOverLan ? "0.0.0.0" : "127.0.0.1");
-                FileManager.ByteArrayToFile(Utils.GetTempPath(_uniqueConfigFile), Encoding.UTF8.GetBytes(privoxyConfig));
+                    configuration.ShareOverLan ? "0.0.0.0" : "127.0.0.1");
+                FileManager.ByteArrayToFile(Utils.GetTempPath(uniqueConfigFile), Encoding.UTF8.GetBytes(privoxyConfig));
 
                 _process = new Process
                 {
@@ -61,7 +49,7 @@ namespace Shadowsocks.Controller.Service
                     StartInfo =
                     {
                         FileName = "ss_privoxy.exe",
-                        Arguments = _uniqueConfigFile,
+                        Arguments = uniqueConfigFile,
                         WorkingDirectory = Utils.GetTempPath(),
                         WindowStyle = ProcessWindowStyle.Hidden,
                         UseShellExecute = true,
@@ -74,7 +62,7 @@ namespace Shadowsocks.Controller.Service
                  * Add this process to job obj associated with this ss process, so that
                  * when ss exit unexpectedly, this process will be forced killed by system.
                  */
-                _privoxyJob.AddProcess(_process.Handle);
+                PrivoxyJob.AddProcess(_process.Handle);
             }
         }
 
