@@ -15,9 +15,6 @@ namespace ShadowSocksProxy.Controller
         private readonly Configuration _config;
 
         private Listener _listener;
-        // controller:
-        // handle user actions
-        // manipulates UI
         // interacts with low level logic
 
         private Thread _ramThread;
