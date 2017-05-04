@@ -7,6 +7,11 @@ namespace ShadowSocksProxy.Model
     [Serializable]
     public class Configuration
     {
+        public Configuration()
+        {
+            Proxy = new ProxyConfig();
+        }
+
         public bool EnableHttp { get; set; }
         public List<Server> RemoteServers { get; set; }
         /// <summary>

@@ -47,6 +47,11 @@ namespace ShadowSocksProxy.Controller
             //StartReleasingMemory();
         }
 
+        public void Reload(Configuration config)
+        {
+            
+        }
+
         public void Start()
         {
             try

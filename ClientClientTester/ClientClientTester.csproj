@@ -82,9 +82,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\shadowsocks-csharp\shadowsocks-csharp.csproj">
-      <Project>{8c02d2f7-7cdb-4d55-9f25-cd03ef4aa062}</Project>
-      <Name>shadowsocks-csharp</Name>
+    <ProjectReference Include="..\ShadowSocksProxy\ShadowSocksProxy.csproj">
+      <Project>{6a4a173a-207f-496a-8a59-2b4c0a01039e}</Project>
+      <Name>ShadowSocksProxy</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
